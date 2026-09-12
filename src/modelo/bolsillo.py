@@ -1,5 +1,5 @@
 import datetime
-
+from modelo import rentabilidad_bolsillo
 
 class Bolsillo:
     def __init__(self, nombre:str, saldo: float, montoMeta: float, fechaMeta: datetime):
@@ -7,4 +7,4 @@ class Bolsillo:
         self.saldo = saldo
         self.montoMeta = montoMeta
         self.fechaMeta = fechaMeta
-        self.tasaRentabilidad: float = 0.07
+        self.tasaRentabilidad: float = rentabilidad_bolsillo

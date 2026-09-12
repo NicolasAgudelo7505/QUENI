@@ -1,10 +1,9 @@
 import datetime
 
 class Transaccion:
-    def __init__(self, tipo:str,monto:float, fecha: datetime, bolsilloOrigen: str, bolsilloDestino:str, impuesto4x1000:float ):
-        self.tipo = tipo
+    def __init__(self, monto:float, fecha: datetime, origen: str, destino:str, impuesto4x1000:float ):
         self.monto = monto
         self.fecha = fecha
-        self.bolsilloOrigen = bolsilloOrigen
-        self.bolsilloDestino = bolsilloDestino
+        self.origen = origen
+        self.destino = destino
         self.impuesto4x1000 = impuesto4x1000

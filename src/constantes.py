@@ -1,4 +1,4 @@
-# Rentabilidades
+
 rentabilidad_bolsillo: float = 0.07
 rentabilidad_cdt: float = 0.095
 impuesto4x1000: float = 0.004
@@ -14,3 +14,7 @@ tasas_de_cambio = {
     ("USD", "COP"): 4000,
     ("COP", "EUR"): 0.00023,
 }
+
+
+tarjetasDebito = []
+civicas = []

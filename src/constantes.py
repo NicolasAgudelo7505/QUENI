@@ -18,3 +18,4 @@ tasas_de_cambio = {
 
 tarjetasDebito = []
 civicas = []
+numeroCuentas = []

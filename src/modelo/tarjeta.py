@@ -1,23 +1,37 @@
 from constantes import tarjetasDebito, civicas
 import random
+
 class Tarjeta:
-    def __init__(self,tipo: str):
+    lista_numeros = []  # las hijas la sobreescriben, cada una con su lista
+
+    def __init__(self):
         self.numero = 0
-        self.tipo = tipo
-        self.crearTarjeta(tipo)
+        self.crearTarjeta()
 
-    def crearTarjeta(self, tipo):
-
-        if tipo == 'debito':
-            lista = tarjetasDebito
-        else:
-            lista = civicas
-
+    def crearTarjeta(self):
         while True:
             numero = random.randint(1000000000, 9999999999)
-            if numero not in lista:
+            if numero not in self.lista_numeros:
                 break
 
         self.numero = numero
-        lista.append(self.numero)
+        self.lista_numeros.append(self.numero)
+
+
+class TarjetaDebito(Tarjeta):
+    lista_numeros = tarjetasDebito  # valida y guarda contra esta lista
+
+
+class Civica(Tarjeta):
+    lista_numeros = civicas  # valida y guarda contra esta otra
+
+    def __init__(self):
+        super().__init__()
+        self.saldo = 0
+
+    def recargar(self, monto: float) -> None:
+        if monto <= 0:
+            raise ValueError("El monto debe ser positivo")
+        self.saldo += monto
+
 

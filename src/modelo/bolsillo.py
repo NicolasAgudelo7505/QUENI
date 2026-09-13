@@ -14,14 +14,14 @@ class Bolsillo:
     def depositar(self, monto) -> bool | ValueError:
         if monto > 0:
             self.saldo += monto
-            return "Depósito exitoso"
+            return True
         else:
             raise ValueError("Debe ingresar un monto mayor a 0")
 
     def retirar(self, monto) -> bool | ValueError:
-        if monto > 0 and monto <= self.saldo:
+        if  0 < monto <= self.saldo:
             self.saldo -= monto
-            return "Depósito exitoso"
+            return True
         else:
             raise ValueError("Debe ingresar un monto mayor a 0")
 

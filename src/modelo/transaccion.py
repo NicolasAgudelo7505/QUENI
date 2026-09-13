@@ -10,5 +10,5 @@ class Transaccion:
         self.impuesto_4x1000 = impuesto_4x1000
 
     def mostrar_info(self) -> str:
-        return f'Fecha de transacción: {self.fecha} | Monto: {self.monto} | Origen: {self.origen} | Destino {self.destino}'
+        return f'Fecha de transacción: {self.fecha} | Monto: {self.monto} | Tipo:{self.tipo} |Origen: {self.origen} | Destino {self.destino} | Impuesto 4x1000 {self.impuesto_4x1000}'
 

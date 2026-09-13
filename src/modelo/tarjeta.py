@@ -1,4 +1,4 @@
-from constantes import tarjetasDebito, civicas
+from modelo import tarjetasDebito, civicas
 import random
 
 class Tarjeta:

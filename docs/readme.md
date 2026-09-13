@@ -1,0 +1,1 @@
+carpeta con los documentos, imágenes y información referente al proyecto

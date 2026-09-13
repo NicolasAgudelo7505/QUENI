@@ -1,15 +1,15 @@
 
-rentabilidad_bolsillo: float = 0.07
-rentabilidad_cdt: float = 0.095
-impuesto4x1000: float = 0.004
+RENTABILIDAD_BOLSILLO: float = 0.07
+RENTABILIDAD_CDT: float = 0.095
+IMPUESTO_4X1000: float = 0.004
 
 # 4x1000
-valor_uvt = 49799  
-tope_uvt_mensual = 350
-monto_minimo_cdt = 500000
+VALOR_UVT = 49799  
+TOPE_MENSUAL = 350
+MONTO_MINIMO_CDT = 500000
 
 # Divisas
-tasas_de_cambio = {
+TASAS_DE_CAMBIO = {
     ("COP", "USD"): 0.00025,
     ("USD", "COP"): 4000,
     ("COP", "EUR"): 0.00023,
@@ -19,3 +19,7 @@ tasas_de_cambio = {
 tarjetasDebito = []
 civicas = []
 numeroCuentas = []
+
+# tipos de transacciones
+TIPOS_GASTO = ["retiro", "envio_saliente", "recarga_civica"]
+TIPOS_INGRESO = ["deposito", "envio_entrante"]

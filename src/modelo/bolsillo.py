@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from modelo import rentabilidadBolsillo
+from modelo import RENTABILIDAD_BOLSILLO
 import math
 
 
@@ -9,7 +9,7 @@ class Bolsillo:
         self.saldo = saldo
         self.montoMeta = montoMeta
         self.fechaMeta = fechaMeta
-        self.tasaRentabilidad: float = rentabilidadBolsillo
+        self.tasaRentabilidad: float = RENTABILIDAD_BOLSILLO
 
     def depositar(self, monto) -> bool | ValueError:
         if monto > 0:
@@ -26,7 +26,7 @@ class Bolsillo:
             raise ValueError("Debe ingresar un monto mayor a 0")
 
     def calcular_rendimiento_mensual(self) -> float:
-        return (self.saldo * rentabilidadBolsillo) / 12
+        return (self.saldo * self.tasaRentabilidad) / 12
     
     def calcular_ahorro_mensual_sugerido(self, fecha_actual=None):
         if fecha_actual is None:

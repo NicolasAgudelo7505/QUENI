@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from modelo import RENTABILIDAD_BOLSILLO
+from .constantes import RENTABILIDAD_BOLSILLO
 import math
 
 

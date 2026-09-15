@@ -1,4 +1,8 @@
-import modelo as m
+from .cdt import CDT
+from .bolsillo import Bolsillo
+from .tarjeta import Tarjeta, Civica, TarjetaDebito
+from .transaccion import Transaccion
+from . import constantes
 from datetime import date, datetime, timedelta
 import random
 import statistics
@@ -7,18 +11,18 @@ import statistics
 class Billetera:
     def __init__(self, disponible: float):
         self.disponible = disponible
-        self.bolsillos: dict[str, m.Bolsillo] = {}
-        self.tarjetas: list[m.Tarjeta] = []
-        self.cdts: list[m.CDT] = []
-        self.historial: list[m.Transaccion] = []
+        self.bolsillos: dict[str, Bolsillo] = {}
+        self.tarjetas: list[Tarjeta] = []
+        self.cdts: list[CDT] = []
+        self.historial: list[Transaccion] = []
         self.numeroCuenta = 0
         self.generarNumeroCuenta()
 
     def generarNumeroCuenta(self) -> None:
         while True:
             numero = random.randint(1000000000, 9999999999)
-            if numero not in m.numeroCuentas:
-                m.numeroCuentas.append(numero)
+            if numero not in constantes.numeroCuentas:
+                constantes.numeroCuentas.append(numero) 
                 self.numeroCuenta = numero
                 break
 
@@ -28,26 +32,25 @@ class Billetera:
         TIPOS_COBRO = [
             "retiro",
             "envio_saliente",
-        ]
+        ]  
 
         for transaccion in self.historial:
             if (transaccion.fecha.month == hoy.month and transaccion.fecha.year == hoy.year):
                 if transaccion.tipo in TIPOS_COBRO:
                     acumulado_mensual += transaccion.monto
 
-        tope_exento = m.TOPE_MENSUAL * m.VALOR_UVT
+        tope_exento = constantes.TOPE_MENSUAL * constantes.VALOR_UVT
 
         if acumulado_mensual >= tope_exento:
-            return monto * m.IMPUESTO_4X1000
+            return monto * constantes.IMPUESTO_4X1000 
 
         if (acumulado_mensual + monto) > tope_exento:
             monto_gravable = (acumulado_mensual + monto) - tope_exento
-            return monto_gravable * m.IMPUESTO_4X1000
-
+            return monto_gravable * constantes.IMPUESTO_4X1000
+            
         return 0.0
 
-    # TODO enviar con numero de cuenta
-    def enviar(self, monto: float, destinatario: 'm.Usuario', origen: str = None) -> None:
+    def enviar(self, monto: float, destinatario: 'Usuario', origen: str = None) -> None:
         if monto <= 0:
             raise ValueError("El monto debe ser positivo")
 
@@ -59,35 +62,35 @@ class Billetera:
                 raise ValueError(f"No existe el bolsillo '{origen}'")
             if self.bolsillos[origen].saldo < total_a_descontar:
                 raise ValueError("Saldo insuficiente en el bolsillo para el envío y el 4x1000")
-
+            
             self.bolsillos[origen].retirar(total_a_descontar)
         else:
             if self.disponible < total_a_descontar:
                 raise ValueError("Saldo insuficiente en el disponible para el envío y el 4x1000")
-
+            
             self.disponible -= total_a_descontar
 
         billetera_destino = destinatario.billetera
-        billetera_destino.disponible += monto
+        billetera_destino.disponible += monto 
 
         hoy = date.today()
 
-        transaccion_salida = m.Transaccion(
-            monto=monto,
-            fecha=hoy,
+        transaccion_salida = Transaccion(
+            monto=monto, 
+            fecha=hoy, 
             origen=origen,
             destino=None,
-            tipo="envio_saliente",
-            impuesto_4x1000=impuesto
+            tipo="envio_saliente", 
+            impuesto_4x1000=impuesto 
         )
         self.historial.append(transaccion_salida)
 
-        transaccion_entrada = m.Transaccion(
-            monto=monto,
+        transaccion_entrada = Transaccion(
+            monto=monto, 
             fecha=hoy,
             origen=None,
-            destino=None,
-            tipo="envio_entrante",
+            destino=None, 
+            tipo="envio_entrante", 
             impuesto_4x1000=0.0
         )
         billetera_destino.historial.append(transaccion_entrada)
@@ -97,35 +100,34 @@ class Billetera:
             raise ValueError("monto invalido, ingrese monto mayor que 0")
         self.disponible += monto
 
-        transaccion = m.Transaccion(
-            monto=monto,
-            fecha=datetime.today().replace(microsecond=0),
-            origen=None,
-            destino=None,
-            tipo="deposito",
+        transaccion = Transaccion(
+            monto=monto, 
+            fecha=datetime.today().replace(microsecond=0), 
+            origen=None,    
+            destino=None,   
+            tipo="deposito", 
             impuesto_4x1000=0.0
         )
         self.historial.append(transaccion)
 
-    # TODO retirar con numero de cuenta y clave
     def retirar_dinero(self, monto: float) -> None:
         if monto <= 0:
             raise ValueError("El monto inválido, debe ser mayor a cero")
-
+            
         impuesto = self.calcular_4x1000(monto)
         total_a_descontar = monto + impuesto
 
         if self.disponible < total_a_descontar:
             raise ValueError("Dinero insuficiente en disponible para cubrir el retiro y el 4x1000")
-
+            
         self.disponible -= total_a_descontar
-
-        transaccion = m.Transaccion(
-            monto=monto,
-            fecha=datetime.today().replace(microsecond=0),
-            origen=None,
-            destino="fuera",
-            tipo="retiro",
+        
+        transaccion = Transaccion(
+            monto=monto, 
+            fecha=datetime.today().replace(microsecond=0), 
+            origen=None, 
+            destino="fuera", 
+            tipo="retiro", 
             impuesto_4x1000=impuesto
         )
         self.historial.append(transaccion)
@@ -137,27 +139,27 @@ class Billetera:
         return [transaccion.mostrar_info() for transaccion in self.historial]
 
     def crearTarjetaDebito(self):
-        tarjeta = m.TarjetaDebito()
+        tarjeta = TarjetaDebito()
         self.tarjetas.append(tarjeta)
 
     def crearTarjetaCivica(self):
-        civica = m.Civica()
+        civica = Civica()
         self.tarjetas.append(civica)
 
-    def recargarCivica(self, monto: float, civica: 'm.Civica') -> None:
-        if civica.numero not in m.civicas:
+    def recargarCivica(self, monto: float, civica: Civica) -> None:
+        if civica.numero not in constantes.civicas:
             raise ValueError(f"No existe civica con el numero '{civica.numero}'")
         else:
             civica.recargar(monto)
 
     def crear_bolsillo(
-            self,
-            nombre: str,
-            monto_meta: float | None = None,
-            fecha_meta: date | None = None,
+        self,
+        nombre: str,
+        monto_meta: float | None = None,
+        fecha_meta: date | None = None,
     ) -> bool:
         if (monto_meta is None and fecha_meta is not None) or (
-                monto_meta is not None and fecha_meta is None
+            monto_meta is not None and fecha_meta is None
         ):
             raise ValueError(
                 "Monto meta y fecha meta deben ingresarse ambos juntos o ninguno"
@@ -172,9 +174,9 @@ class Billetera:
         if fecha_meta is not None and fecha_meta <= date.today():
             raise ValueError("La fecha meta debe ser posterior a la fecha actual")
 
-        nuevo_bolsillo = m.Bolsillo(
-            nombre=nombre,
-            monto_meta=monto_meta,
+        nuevo_bolsillo = Bolsillo(
+            nombre=nombre, 
+            monto_meta=monto_meta, 
             fecha_meta=fecha_meta
         )
         self.bolsillos[nombre] = nuevo_bolsillo
@@ -182,11 +184,11 @@ class Billetera:
         return True
 
     def mover_entre_bolsillos(
-            self, bolsillo_destino: str, monto: float, bolsillo_origen: str = None
+        self, bolsillo_destino: str, monto: float, bolsillo_origen: str = None
     ) -> bool:
         divisas = ["USD", "COP", "EUR"]
         if bolsillo_destino in divisas or (
-                bolsillo_origen is not None and bolsillo_origen in divisas
+            bolsillo_origen is not None and bolsillo_origen in divisas
         ):
             raise ValueError(
                 "Use el método cambiar_divisas para interactuar con bolsillos de moneda extranjera"
@@ -213,14 +215,14 @@ class Billetera:
             raise ValueError(
                 "El monto debe ser mayor al dinero en disponible y mayor que cero"
             )
-
+            
         self.disponible -= monto
         self.bolsillos[bolsillo_destino].depositar(monto)
         return True
 
     def crear_cdt(self, monto: float, plazo_meses: int, origen=None) -> bool:
-        if m.MONTO_MINIMO_CDT > monto:
-            raise ValueError(f"El monto debe ser mayor que el monto mínimo del cdt: {m.MONTO_MINIMO_CDT} ")
+        if constantes.MONTO_MINIMO_CDT > monto:
+            raise ValueError(f"El monto debe ser mayor que el monto mínimo del cdt: {constantes.MONTO_MINIMO_CDT} ")
 
         if plazo_meses <= 0:
             raise ValueError("El plazo de los meses debe ser mayor que cero")
@@ -236,29 +238,29 @@ class Billetera:
                 raise ValueError("Saldo insuficiente del origen")
 
             self.bolsillos[origen].retirar(monto)
-            self.cdts.append(m.CDT(
-                monto=monto,
-                plazo_meses=plazo_meses,
-                fecha_apertura=fecha_apertura,
+            self.cdts.append(CDT(
+                monto=monto, 
+                plazo_meses=plazo_meses, 
+                fecha_apertura=fecha_apertura, 
                 fecha_vencimiento=fecha_vencimiento
             ))
             return True
 
         if self.disponible < monto:
             raise ValueError("Saldo insuficiente en el origen")
-
+            
         self.disponible -= monto
-
-        cdt = m.CDT(
-            monto=monto,
-            plazo_meses=plazo_meses,
-            fecha_apertura=fecha_apertura,
+        
+        cdt = CDT(
+            monto=monto, 
+            plazo_meses=plazo_meses, 
+            fecha_apertura=fecha_apertura, 
             fecha_vencimiento=fecha_vencimiento
         )
         self.cdts.append(cdt)
         return True
 
-    def calcular_ahorro_mensual_sugerido(self, usuario: 'm.Usuario', fecha_actual=None):
+    def calcular_ahorro_mensual_sugerido(self, usuario: 'Usuario', fecha_actual=None):
         if fecha_actual is None:
             fecha_actual = date.today()
         resultados = {}
@@ -293,13 +295,13 @@ class Billetera:
             clave_mes = (t_año, t_mes)
             meses_registrados.add(clave_mes)
 
-            if transaccion.tipo in m.TIPOS_GASTO:
+            if transaccion.tipo in constantes.TIPOS_GASTO:
                 gastos_por_mes[clave_mes] = (
-                        gastos_por_mes.get(clave_mes, 0.0) + transaccion.monto
+                    gastos_por_mes.get(clave_mes, 0.0) + transaccion.monto
                 )
-            elif transaccion.tipo in m.TIPOS_INGRESO:
+            elif transaccion.tipo in constantes.TIPOS_INGRESO:
                 ingresos_por_mes[clave_mes] = (
-                        ingresos_por_mes.get(clave_mes, 0.0) + transaccion.monto
+                    ingresos_por_mes.get(clave_mes, 0.0) + transaccion.monto
                 )
 
         if len(meses_registrados) < 1:
@@ -323,12 +325,12 @@ class Billetera:
         }
 
     def cambiar_divisas(
-            self, monto: float, tipo_divisa: tuple[str, str], origen: str = None
+        self, monto: float, tipo_divisa: tuple[str, str], origen: str = None
     ) -> bool:
         if monto <= 0:
             raise ValueError("El monto debe ser mayor a cero")
 
-        if tipo_divisa not in m.TASAS_DE_CAMBIO:
+        if tipo_divisa not in constantes.TASAS_DE_CAMBIO:
             raise ValueError("La tasa de cambio es incorrecta")
 
         moneda_destino = tipo_divisa[1]
@@ -336,7 +338,7 @@ class Billetera:
         if moneda_destino not in self.bolsillos:
             self.crear_bolsillo(nombre=moneda_destino)
 
-        monto_convertido = monto * m.TASAS_DE_CAMBIO[tipo_divisa]
+        monto_convertido = monto * constantes.TASAS_DE_CAMBIO[tipo_divisa]
 
         if origen is not None:
             if origen not in self.bolsillos:
@@ -354,7 +356,7 @@ class Billetera:
             self.disponible -= monto
             self.bolsillos[moneda_destino].depositar(monto_convertido)
 
-        nueva_transaccion = m.Transaccion(
+        nueva_transaccion = Transaccion(
             monto=monto,
             fecha=date.today(),
             origen=origen,

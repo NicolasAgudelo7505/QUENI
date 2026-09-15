@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from modelo import RENTABILIDAD_CDT
+from .constantes import RENTABILIDAD_CDT
 class CDT:
     def __init__(self, monto:float, plazo_meses:int, fecha_apertura:date, fecha_vencimiento:date ):
         self.monto = monto

@@ -8,6 +8,10 @@ Tarjeta/TarjetaDebito/Civica (crearTarjeta -> se llama en el __init__, recargar)
 Transaccion (mostrar_info)
 Usuario (creación)
 """
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
+
 from datetime import date
 import modelo as m
 

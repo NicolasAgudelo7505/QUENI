@@ -2,7 +2,7 @@ from constantes import tarjetasDebito, civicas
 import random
 
 class Tarjeta:
-    lista_numeros = []  # las hijas la sobreescriben, cada una con su lista
+    lista_numeros = []
 
     def __init__(self):
         self.numero = 0

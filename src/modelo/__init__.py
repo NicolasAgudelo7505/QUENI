@@ -1,11 +1,4 @@
-from .usuario import Usuario
-from .cdt import CDT
-from .bolsillo import Bolsillo
-from .tarjeta import Tarjeta, Civica, TarjetaDebito
-from .transaccion import Transaccion
-from .billetera import Billetera
-from src import constantes
-from ..constantes import (
+from constantes import (
     RENTABILIDAD_BOLSILLO,
     RENTABILIDAD_CDT,
     MONTO_MINIMO_CDT,
@@ -19,3 +12,10 @@ from ..constantes import (
     TOPE_MENSUAL,
     IMPUESTO_4X1000
 )
+
+from .billetera import Billetera
+from .usuario import Usuario
+from .cdt import CDT
+from .bolsillo import Bolsillo
+from .tarjeta import Tarjeta, Civica, TarjetaDebito
+from .transaccion import Transaccion

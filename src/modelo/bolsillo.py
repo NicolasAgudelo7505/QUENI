@@ -4,11 +4,11 @@ import math
 
 
 class Bolsillo:
-    def __init__(self, nombre: str, montoMeta: float = None, fechaMeta: datetime = None, saldo: float = 0.0):
+    def __init__(self, nombre: str, monto_meta: float = None, fecha_meta: datetime = None, saldo: float = 0.0):
         self.nombre = nombre
         self.saldo = saldo
-        self.montoMeta = montoMeta
-        self.fechaMeta = fechaMeta
+        self.monto_meta = monto_meta
+        self.fecha_meta = fecha_meta
         self.tasaRentabilidad: float = RENTABILIDAD_BOLSILLO
 
     def depositar(self, monto) -> bool | ValueError:

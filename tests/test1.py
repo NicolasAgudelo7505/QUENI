@@ -112,4 +112,6 @@ print(f"Ahorro sugerido para 'moto': {resultado_bolsillo}")
 resultado_todos = billetera_ana.calcular_ahorro_mensual_sugerido(usuario_ana)
 print(f"Ahorro sugerido para todos los bolsillos con meta: {resultado_todos}")
 
+print(billetera_ana.mostrar_estadisticas())
+
 print("\n✅ test_billetera_1.py terminó sin errores")

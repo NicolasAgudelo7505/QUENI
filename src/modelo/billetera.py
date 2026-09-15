@@ -366,3 +366,15 @@ class Billetera:
         )
         self.historial.append(nueva_transaccion)
         return True
+
+        #TODO Presentar mejor el historial
+    def mostrar_estadisticas(self):
+        i = 0
+        g = 0
+        for transaccion in self.historial:
+            if (transaccion.tipo in constantes.TIPOS_INGRESO):
+                i += transaccion.monto
+            elif(transaccion.tipo in constantes.TIPOS_GASTO):
+                g += transaccion.monto
+
+        return f"Los gastos totales fueron: {g} | Los ingresos totales fueron: {i} | Todos los movimientos que hubieron: {self.consultar_historial_transacciones()}"

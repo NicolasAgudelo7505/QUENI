@@ -5,6 +5,11 @@ CDT (calcular_valor_proyectado)
 Bolsillo (calcular_ahorro_mensual_sugerido con caso de error)
 Usuario (calcular_ahorro_mensual con meta no viable)
 """
+
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
+
 from datetime import date, timedelta
 import modelo as m
 

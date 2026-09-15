@@ -1,4 +1,4 @@
-from billetera import Billetera
+from .billetera import Billetera
 
 
 class Usuario:

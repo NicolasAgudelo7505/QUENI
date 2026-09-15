@@ -1,16 +1,12 @@
-# This is a sample Python script.
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 
-# Press Ctrl+F5 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import modelo as m
 
+billetera1 = m.Billetera(disponible=1000000)
+print("Disponible:", billetera1.consultar_disponible())
+print("Numero de cuenta:", billetera1.numeroCuenta)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press F9 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+billetera1.retirar_dinero(monto=50000)
+print("Disponible tras retiro:", billetera1.consultar_disponible())

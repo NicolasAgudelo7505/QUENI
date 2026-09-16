@@ -1,6 +1,6 @@
 from .constantes import tarjetasDebito, civicas
 import random
-
+#TODO Restriccion De Crear Una Unica Tarjeta De Cada Tipo
 class Tarjeta:
     lista_numeros = []
 

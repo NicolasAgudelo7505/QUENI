@@ -367,7 +367,7 @@ class Billetera:
         self.historial.append(nueva_transaccion)
         return True
 
-        #TODO Presentar mejor el historial
+        #TODO Presentar mejor el historial y separarlo por tipos (retiro, depósito, envío, etc..)
     def mostrar_estadisticas(self):
         i = 0
         g = 0

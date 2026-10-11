@@ -1,5 +1,11 @@
 from datetime import date, datetime
 from .constantes import RENTABILIDAD_BOLSILLO
+from .excepciones import (  # NUEVO
+    MontoInvalidoError,
+    SaldoInsuficienteError,
+    MetaNoDefinidaError,
+    MetaVencidaError,
+)
 import math
 
 
@@ -16,14 +22,22 @@ class Bolsillo:
             self.saldo += monto
             return True
         else:
-            raise ValueError("Debe ingresar un monto mayor a 0")
+            raise MontoInvalidoError("Debe ingresar un monto mayor a 0")  # CAMBIO
 
     def retirar(self, monto) -> bool | ValueError:
-        if  0 < monto <= self.saldo:
-            self.saldo -= monto
-            return True
-        else:
-            raise ValueError("Debe ingresar un monto mayor a 0")
+        # CAMBIO: antes ambos casos lanzaban el mismo mensaje ("Debe ingresar
+        # un monto mayor a 0"), aun cuando el problema era saldo insuficiente.
+        # Ahora cada situación tiene su propia excepción.
+        if monto <= 0:
+            raise MontoInvalidoError("Debe ingresar un monto mayor a 0")
+        if monto > self.saldo:
+            raise SaldoInsuficienteError(
+                "Saldo insuficiente en el bolsillo",
+                saldo=self.saldo,
+                requerido=monto,
+            )
+        self.saldo -= monto
+        return True
 
     def calcular_rendimiento_mensual(self) -> float:
         return (self.saldo * self.tasaRentabilidad) / 12
@@ -33,7 +47,7 @@ class Bolsillo:
             fecha_actual = date.today()
 
         if self.monto_meta is None or self.fecha_meta is None:
-            raise ValueError("El bolsillo no tiene una meta definida")
+            raise MetaNoDefinidaError("El bolsillo no tiene una meta definida")  # CAMBIO
         
         if self.saldo >= self.monto_meta:
             return 0.0
@@ -42,7 +56,7 @@ class Bolsillo:
         meses_restantes = math.ceil(dias_restantes / 30)
 
         if meses_restantes <= 0:
-            raise ValueError("La fecha meta ya venció")
+            raise MetaVencidaError("La fecha meta ya venció")  # CAMBIO
         monto_sugerido = (self.monto_meta - self.saldo) / meses_restantes
 
         return float(monto_sugerido)

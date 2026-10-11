@@ -3,6 +3,18 @@ from .bolsillo import Bolsillo
 from .tarjeta import Tarjeta, Civica, TarjetaDebito
 from .transaccion import Transaccion
 from . import constantes
+from .excepciones import (  # NUEVO
+    BilleteraError,
+    MontoInvalidoError,
+    SaldoInsuficienteError,
+    BolsilloNoExisteError,
+    BolsilloDuplicadoError,
+    MetaInvalidaError,
+    CDTInvalidoError,
+    DivisaNoSoportadaError,
+    OperacionNoPermitidaError,
+    TarjetaNoExisteError,
+)
 from datetime import date, datetime, timedelta
 import random
 import statistics
@@ -52,21 +64,29 @@ class Billetera:
 
     def enviar(self, monto: float, destinatario: 'Usuario', origen: str = None) -> None:
         if monto <= 0:
-            raise ValueError("El monto debe ser positivo")
+            raise MontoInvalidoError("El monto debe ser positivo")  # CAMBIO
 
         impuesto = self.calcular_4x1000(monto)
         total_a_descontar = monto + impuesto
 
         if origen is not None:
             if origen not in self.bolsillos:
-                raise ValueError(f"No existe el bolsillo '{origen}'")
+                raise BolsilloNoExisteError(f"No existe el bolsillo '{origen}'", nombre=origen)  # CAMBIO
             if self.bolsillos[origen].saldo < total_a_descontar:
-                raise ValueError("Saldo insuficiente en el bolsillo para el envío y el 4x1000")
+                raise SaldoInsuficienteError(  # CAMBIO
+                    "Saldo insuficiente en el bolsillo para el envío y el 4x1000",
+                    saldo=self.bolsillos[origen].saldo,
+                    requerido=total_a_descontar,
+                )
             
             self.bolsillos[origen].retirar(total_a_descontar)
         else:
             if self.disponible < total_a_descontar:
-                raise ValueError("Saldo insuficiente en el disponible para el envío y el 4x1000")
+                raise SaldoInsuficienteError(  # CAMBIO
+                    "Saldo insuficiente en el disponible para el envío y el 4x1000",
+                    saldo=self.disponible,
+                    requerido=total_a_descontar,
+                )
             
             self.disponible -= total_a_descontar
 
@@ -97,7 +117,7 @@ class Billetera:
 
     def depositar_dinero(self, monto: float) -> None:
         if monto <= 0:
-            raise ValueError("monto invalido, ingrese monto mayor que 0")
+            raise MontoInvalidoError("monto invalido, ingrese monto mayor que 0")  # CAMBIO
         self.disponible += monto
 
         transaccion = Transaccion(
@@ -112,13 +132,17 @@ class Billetera:
 
     def retirar_dinero(self, monto: float) -> None:
         if monto <= 0:
-            raise ValueError("El monto inválido, debe ser mayor a cero")
+            raise MontoInvalidoError("El monto inválido, debe ser mayor a cero")  # CAMBIO
             
         impuesto = self.calcular_4x1000(monto)
         total_a_descontar = monto + impuesto
 
         if self.disponible < total_a_descontar:
-            raise ValueError("Dinero insuficiente en disponible para cubrir el retiro y el 4x1000")
+            raise SaldoInsuficienteError(  # CAMBIO
+                "Dinero insuficiente en disponible para cubrir el retiro y el 4x1000",
+                saldo=self.disponible,
+                requerido=total_a_descontar,
+            )
             
         self.disponible -= total_a_descontar
         
@@ -148,7 +172,9 @@ class Billetera:
 
     def recargarCivica(self, monto: float, civica: Civica) -> None:
         if civica.numero not in constantes.civicas:
-            raise ValueError(f"No existe civica con el numero '{civica.numero}'")
+            raise TarjetaNoExisteError(  # CAMBIO
+                f"No existe civica con el numero '{civica.numero}'", numero=civica.numero
+            )
         else:
             civica.recargar(monto)
 
@@ -161,18 +187,18 @@ class Billetera:
         if (monto_meta is None and fecha_meta is not None) or (
             monto_meta is not None and fecha_meta is None
         ):
-            raise ValueError(
+            raise MetaInvalidaError(  # CAMBIO
                 "Monto meta y fecha meta deben ingresarse ambos juntos o ninguno"
             )
 
         if nombre in self.bolsillos:
-            raise ValueError("Ya existe un bolsillo con este nombre")
+            raise BolsilloDuplicadoError("Ya existe un bolsillo con este nombre", nombre=nombre)  # CAMBIO
 
         if monto_meta is not None and monto_meta <= 0:
-            raise ValueError("El valor del monto meta debe ser mayor a cero")
+            raise MetaInvalidaError("El valor del monto meta debe ser mayor a cero")  # CAMBIO
 
         if fecha_meta is not None and fecha_meta <= date.today():
-            raise ValueError("La fecha meta debe ser posterior a la fecha actual")
+            raise MetaInvalidaError("La fecha meta debe ser posterior a la fecha actual")  # CAMBIO
 
         nuevo_bolsillo = Bolsillo(
             nombre=nombre, 
@@ -190,30 +216,36 @@ class Billetera:
         if bolsillo_destino in divisas or (
             bolsillo_origen is not None and bolsillo_origen in divisas
         ):
-            raise ValueError(
+            raise OperacionNoPermitidaError(  # CAMBIO
                 "Use el método cambiar_divisas para interactuar con bolsillos de moneda extranjera"
             )
 
         if bolsillo_origen is not None and bolsillo_origen not in self.bolsillos:
-            raise ValueError("El bolsillo de origen no existe")
+            raise BolsilloNoExisteError("El bolsillo de origen no existe", nombre=bolsillo_origen)  # CAMBIO
 
         if bolsillo_destino not in self.bolsillos:
-            raise ValueError("El bolsillo de destino no existe")
+            raise BolsilloNoExisteError("El bolsillo de destino no existe", nombre=bolsillo_destino)  # CAMBIO
 
         if monto <= 0:
-            raise ValueError("El monto debe ser mayor a cero")
+            raise MontoInvalidoError("El monto debe ser mayor a cero")  # CAMBIO
 
         if bolsillo_origen is not None:
             if self.bolsillos[bolsillo_origen].saldo >= monto:
                 self.bolsillos[bolsillo_origen].retirar(monto)
                 self.bolsillos[bolsillo_destino].depositar(monto)
             else:
-                raise ValueError("Saldo insuficiente en bolsillo de origen")
+                raise SaldoInsuficienteError(  # CAMBIO
+                    "Saldo insuficiente en bolsillo de origen",
+                    saldo=self.bolsillos[bolsillo_origen].saldo,
+                    requerido=monto,
+                )
             return True
 
         if self.disponible < monto:
-            raise ValueError(
-                "El monto debe ser mayor al dinero en disponible y mayor que cero"
+            raise SaldoInsuficienteError(  # CAMBIO
+                "Saldo insuficiente en el disponible para mover ese monto",
+                saldo=self.disponible,
+                requerido=monto,
             )
             
         self.disponible -= monto
@@ -222,20 +254,26 @@ class Billetera:
 
     def crear_cdt(self, monto: float, plazo_meses: int, origen=None) -> bool:
         if constantes.MONTO_MINIMO_CDT > monto:
-            raise ValueError(f"El monto debe ser mayor que el monto mínimo del cdt: {constantes.MONTO_MINIMO_CDT} ")
+            raise CDTInvalidoError(  # CAMBIO
+                f"El monto debe ser mayor que el monto mínimo del cdt: {constantes.MONTO_MINIMO_CDT} "
+            )
 
         if plazo_meses <= 0:
-            raise ValueError("El plazo de los meses debe ser mayor que cero")
+            raise CDTInvalidoError("El plazo de los meses debe ser mayor que cero")  # CAMBIO
 
         fecha_apertura = date.today()
         fecha_vencimiento = fecha_apertura + timedelta(days=30 * plazo_meses)
 
         if origen is not None:
             if origen not in self.bolsillos:
-                raise ValueError("El bolsillo ingresado no existe")
+                raise BolsilloNoExisteError("El bolsillo ingresado no existe", nombre=origen)  # CAMBIO
 
             if self.bolsillos[origen].saldo < monto:
-                raise ValueError("Saldo insuficiente del origen")
+                raise SaldoInsuficienteError(  # CAMBIO
+                    "Saldo insuficiente del origen",
+                    saldo=self.bolsillos[origen].saldo,
+                    requerido=monto,
+                )
 
             self.bolsillos[origen].retirar(monto)
             self.cdts.append(CDT(
@@ -247,7 +285,11 @@ class Billetera:
             return True
 
         if self.disponible < monto:
-            raise ValueError("Saldo insuficiente en el origen")
+            raise SaldoInsuficienteError(  # CAMBIO
+                "Saldo insuficiente en el origen",
+                saldo=self.disponible,
+                requerido=monto,
+            )
             
         self.disponible -= monto
         
@@ -271,7 +313,7 @@ class Billetera:
                     resultados[nombre_bolsillo] = usuario.calcular_ahorro_mensual(
                         bolsillo, fecha_actual
                     )
-                except ValueError as error:
+                except BilleteraError as error:  # CAMBIO: antes era ValueError
                     resultados[nombre_bolsillo] = {"error": str(error)}
         return resultados
 
@@ -328,10 +370,10 @@ class Billetera:
         self, monto: float, tipo_divisa: tuple[str, str], origen: str = None
     ) -> bool:
         if monto <= 0:
-            raise ValueError("El monto debe ser mayor a cero")
+            raise MontoInvalidoError("El monto debe ser mayor a cero")  # CAMBIO
 
         if tipo_divisa not in constantes.TASAS_DE_CAMBIO:
-            raise ValueError("La tasa de cambio es incorrecta")
+            raise DivisaNoSoportadaError("La tasa de cambio es incorrecta", par=tipo_divisa)  # CAMBIO
 
         moneda_destino = tipo_divisa[1]
 
@@ -342,16 +384,24 @@ class Billetera:
 
         if origen is not None:
             if origen not in self.bolsillos:
-                raise ValueError("El origen no existe")
+                raise BolsilloNoExisteError("El origen no existe", nombre=origen)  # CAMBIO
 
             if self.bolsillos[origen].saldo < monto:
-                raise ValueError("Saldo insuficiente del origen")
+                raise SaldoInsuficienteError(  # CAMBIO
+                    "Saldo insuficiente del origen",
+                    saldo=self.bolsillos[origen].saldo,
+                    requerido=monto,
+                )
 
             self.bolsillos[origen].retirar(monto)
             self.bolsillos[moneda_destino].depositar(monto_convertido)
         else:
             if self.disponible < monto:
-                raise ValueError("Saldo del origen insuficiente")
+                raise SaldoInsuficienteError(  # CAMBIO
+                    "Saldo del origen insuficiente",
+                    saldo=self.disponible,
+                    requerido=monto,
+                )
 
             self.disponible -= monto
             self.bolsillos[moneda_destino].depositar(monto_convertido)

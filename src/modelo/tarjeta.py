@@ -1,4 +1,5 @@
 from .constantes import tarjetasDebito, civicas
+from .excepciones import MontoInvalidoError  
 import random
 #TODO Restriccion De Crear Una Unica Tarjeta De Cada Tipo
 class Tarjeta:
@@ -31,7 +32,5 @@ class Civica(Tarjeta):
 
     def recargar(self, monto: float) -> None:
         if monto <= 0:
-            raise ValueError("El monto debe ser positivo")
+            raise MontoInvalidoError("El monto debe ser positivo")  # CAMBIO
         self.saldo += monto
-
-

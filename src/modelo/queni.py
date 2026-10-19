@@ -20,7 +20,7 @@ class QUENI:
     def __init__(self):
         self.usuarios: dict[str, Usuario] = {}   # documento -> Usuario
         self.cuentas: dict[int, Billetera] = {}  # número de cuenta -> Billetera
-        self.tarjetas: dict [str, list[Tarjeta]] = {'Debito' : [], 'Civica': []}
+        self.tarjetas: dict [str, list[int]] = {'Debito' : [], 'Civica': []}
 
 
     def generar_numero_cuenta(self) -> int:
@@ -109,42 +109,41 @@ class QUENI:
     # Tarjetas
     # ------------------------------------------------------------------
 
-    def generar_numero_tarjeta(self, lista: list[int]) -> int | None:
+    def generar_numero_tarjeta(self, lista: list[int]) -> int:
         while True:
             numero = random.randint(1000000000, 9999999999)
             if numero not in lista:
-                return numero
-            return None
+                return numero  
 
     def crear_tarjeta_debito(self) -> Tarjeta:
-        numero_tarjeta = self.generar_numero_tarjeta(self.tarjetas['Debito'])
-        if numero_tarjeta is not None:
-            tarjeta = Tarjeta(numero_tarjeta)
-            self.tarjetas['Debito'].append(tarjeta.numero)
-            return tarjeta
-        raise TarjetaDuplicadaError("Ya existe una tarjeta con este número")
+        numero = self.generar_numero_tarjeta(self.tarjetas['Debito'])
+        tarjeta = Tarjeta(numero)
+        self.tarjetas['Debito'].append(tarjeta.numero)
+        return tarjeta
 
-    def crear_tarjeta_civica(self) -> None:
-        numero_tarjeta = self.generar_numero_tarjeta(self.tarjetas['Civica'])
-        if numero_tarjeta is not None:
-            tarjeta = Civica(numero_tarjeta)
-            self.tarjetas['Civica'].append(tarjeta.numero)
-            return tarjeta
-        raise TarjetaDuplicadaError("Ya existe una tarjeta con este número")
+    def crear_tarjeta_civica(self) -> Civica:
+        numero = self.generar_numero_tarjeta(self.tarjetas['Civica'])
+        tarjeta = Civica(numero)
+        self.tarjetas['Civica'].append(tarjeta.numero)
+        return tarjeta
 
-    def asginar_tarjeta_debito(self, numero_cuenta):
+    def asignar_tarjeta_debito(self, numero_cuenta: int) -> Tarjeta:
         billetera = self.buscar_cuenta(numero_cuenta)
-        tarjeta = self.crear_tarjeta_debito()
-        if 'Debito' in billetera.tarjetas:
+        if 'Debito' in billetera.tarjetas:       
             raise TarjetaDuplicadaError("Ya existe una tarjeta débito en esta billetera", tipo="Debito")
-        billetera.tarjetas['Debito'] = tarjeta 
+        tarjeta = self.crear_tarjeta_debito()   
+        billetera.tarjetas['Debito'] = tarjeta
+        return tarjeta
 
-    def asginar_tarjeta_civica(self, numero_cuenta):
+    def asignar_tarjeta_civica(self, numero_cuenta: int) -> Civica:
         billetera = self.buscar_cuenta(numero_cuenta)
-        tarjeta = self.crear_tarjeta_civica()
         if 'Civica' in billetera.tarjetas:
             raise TarjetaDuplicadaError("Ya existe una tarjeta cívica en esta billetera", tipo="Civica")
-        billetera.tarjetas['Civica'] = tarjeta 
+        tarjeta = self.crear_tarjeta_civica()
+        billetera.tarjetas['Civica'] = tarjeta
+        return tarjeta
+
+
 
 
 

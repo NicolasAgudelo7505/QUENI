@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from . import constantes
 from .bolsillo import Bolsillo
 from .cdt import CDT
-from .tarjeta import Tarjeta, TarjetaDebito, Civica
+from .tarjeta import Tarjeta, Civica
 from .transaccion import Transaccion
 from .excepciones import (
     MontoInvalidoError,
@@ -277,10 +277,11 @@ class Billetera:
     # ------------------------------------------------------------------
 
     def recargar_civica(self, monto: float, civica: Civica, origen: str = None) -> None:
-        if 'civica' not in self.tarjetas:
-            numero = civica.numero
+        if civica is None or self.tarjetas.get('Civica') is not civica:
+            numero = getattr(civica, 'numero', None)
             raise TarjetaNoExisteError(
-                f"No existe civica con el numero '{numero}' en esta billetera"
+                f"No existe civica con el numero '{numero}' en esta billetera",
+                numero=numero,
             )
 
         self.debitar(monto, origen)

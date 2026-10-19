@@ -1,5 +1,3 @@
-import random
-
 from .excepciones import MontoInvalidoError
 
 class Tarjeta:

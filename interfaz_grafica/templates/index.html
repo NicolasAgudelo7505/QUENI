@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QUENI</title>
+<style>
+:root{--fondo:#0f0e0e;--panel:#262121;--panel-h:#332b2b;--acento:#ac4d4d;--suave:#9c5050;--texto:#a9a3a3;--flecha:#878181;--claro:#d9d9d9;--oscuro:#513131;--tarjeta:#18151f;--tarjeta-txt:#7c4f4f;--civica:#3e8a2b}
+*{box-sizing:border-box;margin:0}
+body{background:var(--fondo);color:var(--texto);font-family:Arial,sans-serif;display:flex;justify-content:center}
+.app{width:100%;max-width:360px;height:100vh;max-height:640px;position:relative}
+.pantalla{display:flex;flex-direction:column;height:100%}
+.pantalla[hidden]{display:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px 0;min-height:68px}
+header h1{font-size:24px;font-weight:400}
+header img{width:54px;height:54px;object-fit:contain}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+.volver svg{width:46px;height:34px;transition:opacity .15s}.volver:hover svg{opacity:.7}
+svg{display:block}
+.centro{display:flex;justify-content:center}
+.etq{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;text-align:left;line-height:1.3}
+.cuadro,.pildora,.bandera{background:var(--panel);transition:background .15s}
+button.cuadro:hover,button.pildora:hover,button.bandera:hover{background:var(--panel-h)}
+.cuadro{width:64px;height:78px;border-radius:10px}
+.pildora{width:84px;height:46px;border-radius:23px}
+.pildora.sm{width:76px;height:44px;border-radius:22px}
+.pildora svg{width:100%;height:100%}
+.bandera{width:54px;height:60px;clip-path:polygon(0 0,50% 25%,100% 0,100% 100%,0 100%)}
+.acciones{display:flex;gap:12px;justify-content:center;align-items:flex-start;margin-top:70px}
+.acciones.b{gap:20px;margin-top:40px}
+.col{display:flex;flex-direction:column;gap:8px}
+/* tarjeta de cuenta */
+.cuenta{position:relative;width:320px;height:130px;margin:18px auto 0;background:var(--panel);border-radius:30px;overflow:hidden;padding:22px 22px}
+.cuenta svg{position:absolute;inset:0;width:100%;height:100%}
+.cuenta p{position:relative;font-size:15px}.cuenta p+p{font-size:12px;margin:10px 0 0 8px}
+/* bolsillos */
+.capsula{position:relative;width:330px;height:210px;margin:30px auto 0;background:var(--panel);border-radius:105px;text-align:center;padding-top:16px;font-size:14px}
+.claro{position:absolute;left:16%;top:24%;width:62%;height:67%;background:var(--claro);border-radius:16px;transform:rotate(-.8deg);text-align:left;padding:16% 12px 0;color:var(--oscuro)}
+.claro::after{content:"";position:absolute;top:9%;right:10%;width:16px;height:16px;border-radius:50%;background:var(--panel)}
+.claro b{display:block;font-size:17px}.claro span{font-size:13px;font-weight:700}
+/* tarjeta bancaria */
+.banco{position:relative;width:270px;height:350px;margin:30px auto 0;background:var(--tarjeta);border-radius:36px;padding:52px 10px 0;cursor:pointer}
+.banco small{display:block;font-size:11px}.banco div{color:var(--tarjeta-txt);font-size:16px;margin:4px 0 28px}
+.banco .tit{position:absolute;left:10px;bottom:30px;margin:0;font-size:15px;font-weight:700}
+.banco img{position:absolute;right:14px;bottom:14px;width:48px}
+/* cívica */
+.civica{position:relative;width:320px;height:250px;margin:60px auto 0;background:var(--civica);border:1px solid var(--suave);color:#fff}
+.civica svg{position:absolute;inset:0;width:100%;height:100%}
+.civica h2{position:absolute;left:3%;top:25%;font-size:26px;font-weight:400}
+.civica i{position:absolute;left:3%;top:44.6%;width:11.7%;height:5.8%;background:var(--claro)}
+.civica p{position:absolute;right:5%;font-size:11px}
+#aviso{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--panel);padding:8px 14px;border-radius:12px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+#aviso.on{opacity:1}
+</style>
+</head>
+<body>
+<!-- definiciones SVG reutilizables -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="pta" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto"><path d="M0,0L4,2L0,4z" fill="#ac4d4d"/></marker>
+    <marker id="ptf" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto"><path d="M0,0L4,2L0,4z" fill="#878181"/></marker>
+    <g id="deco" fill="none" stroke="#9c5050" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path vector-effect="non-scaling-stroke" d="M48.9 0L88.8 21.3L100 58"/>
+      <path vector-effect="non-scaling-stroke" d="M59.9 0L50.2 100"/>
+      <path vector-effect="non-scaling-stroke" d="M50.2 100C62 80 75 56 83 56.5C92 57 95 80 95 97"/>
+    </g>
+    <symbol id="enviar" viewBox="0 0 84 46"><path d="M76 19Q50 48 12 24" fill="none" stroke="#ac4d4d" stroke-width="3" stroke-linecap="round" marker-end="url(#pta)"/></symbol>
+    <symbol id="sacar" viewBox="0 0 84 46"><path d="M8 33Q42 2 74 26" fill="none" stroke="#ac4d4d" stroke-width="3" stroke-linecap="round" marker-end="url(#pta)"/></symbol>
+    <symbol id="atras" viewBox="0 0 46 34"><path d="M44 2C46 14 40 26 22 28C14 29 10 28 7 27" fill="none" stroke="#878181" stroke-width="3" stroke-linecap="round" marker-end="url(#ptf)"/></symbol>
+  </defs>
+</svg>
+
+<main class="app">
+
+<!-- MENÚ -->
+<section class="pantalla" id="menu">
+  <header><h1 data-bind="usuario">nombre de usuario</h1><img src="/static/logo.png" alt="QUENI"></header>
+  <div class="cuenta"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><use href="#deco"/></svg>
+    <p>cuenta: <span data-bind="cuenta.tipo">tipo</span></p><p data-bind="cuenta.llave">llave cuenta</p></div>
+  <div class="acciones">
+    <button class="etq" data-ir="bolsillos"><span class="cuadro"></span>Bolsillos</button>
+    <button class="etq" data-ir="tarjetas"><span class="cuadro"></span>Tarjetas</button>
+    <button class="etq" data-ir="cdt"><span class="cuadro"></span>CDT</button>
+    <div class="col">
+      <button class="etq" data-accion="enviar"><span class="pildora"><svg><use href="#enviar"/></svg></span>Enviar</button>
+      <button class="etq" data-accion="sacar"><span class="pildora"><svg><use href="#sacar"/></svg></span>Sacar</button>
+    </div>
+  </div>
+</section>
+
+<!-- BOLSILLOS -->
+<section class="pantalla" id="bolsillos" hidden>
+  <header><h1>Tus Bolsillos</h1><button class="volver" data-ir="menu"><svg><use href="#atras"/></svg></button></header>
+  <div class="capsula"><span data-bind="bolsillo.nombre">Nombre Bolsillo</span>
+    <div class="claro"><b>Disponible</b><span data-bind="bolsillo.disponible">$xxx.xxx</span></div></div>
+  <div class="acciones b">
+    <button class="etq" data-accion="enviar_a_bolsillo"><span class="pildora sm"><svg><use href="#enviar"/></svg></span>Enviar<br>a bolsillo</button>
+    <button class="etq" data-accion="sacar_de_bolsillo"><span class="pildora sm"><svg><use href="#sacar"/></svg></span>sacar de<br>bolsillo</button>
+    <button class="etq" data-ir="extranjero"><span class="bandera"></span>ir a bolsillos<br>extranjeros</button>
+  </div>
+</section>
+
+<!-- BOLSILLO EXTRANJERO -->
+<section class="pantalla" id="extranjero" hidden>
+  <header><h1>Tu bolsillo Extranjero</h1><button class="volver" data-ir="bolsillos"><svg><use href="#atras"/></svg></button></header>
+  <div class="capsula" style="margin-top:40px"><span data-bind="bolsillo_extranjero.nombre">Nombre Bolsillo</span>
+    <div class="claro"><b>Disponible</b><span data-bind="bolsillo_extranjero.disponible">$xxx.xxx</span></div></div>
+</section>
+
+<!-- TARJETAS (clic en la tarjeta -> Cívica) -->
+<section class="pantalla" id="tarjetas" hidden>
+  <header><h1></h1><button class="volver" data-ir="menu"><svg><use href="#atras"/></svg></button></header>
+  <div class="banco" data-ir="civica">
+    <small>Número de la tarjeta</small><div data-bind="tarjeta.numero">XXXX-XXXX-XXXX-XXXX</div>
+    <small>Fecha de expiración</small><div data-bind="tarjeta.expira">XX/XX</div>
+    <small>CVV</small><div data-bind="tarjeta.cvv">XXX</div>
+    <div class="tit" data-bind="tarjeta.titular">NOMBRE TITULAR</div><img src="/static/logo.png" alt="">
+  </div>
+</section>
+
+<!-- CÍVICA -->
+<section class="pantalla" id="civica" hidden>
+  <header><h1>Tu Tarjeta Cívica</h1><button class="volver" data-ir="tarjetas"><svg><use href="#atras"/></svg></button></header>
+  <div class="civica">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="#000" stroke-width="1">
+      <path vector-effect="non-scaling-stroke" d="M0 100L100 0"/><path vector-effect="non-scaling-stroke" d="M9.5 100L100 0"/>
+      <path vector-effect="non-scaling-stroke" d="M0 100C25 80 45 58 65 43C78 36 88 36 94 45C99 53 100 60 100 66"/></svg>
+    <h2>Cívica</h2><i></i>
+    <p style="top:68%" data-bind="civica.titular">NOMBRE TITULAR CIVICA</p>
+    <p style="top:77%" data-bind="civica.cc">C.C XXXXXXXX</p>
+    <p style="top:87%" data-bind="civica.civica">Civ. XXXXXXXX</p>
+  </div>
+</section>
+
+<!-- CDT (clic en el título -> menú) -->
+<section class="pantalla" id="cdt" hidden>
+  <header><h1 data-ir="menu" style="cursor:pointer">Tu CDT</h1><img src="/static/logo.png" alt="QUENI"></header>
+  <div class="cuenta"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><use href="#deco"/></svg>
+    <p>cuenta: <span data-bind="cdt.tipo">tipo</span></p><p data-bind="cdt.numero">xxxxxxxx</p></div>
+  <div class="acciones" style="gap:44px">
+    <div class="etq"><span class="cuadro"></span>Unidades</div>
+    <div class="etq"><span class="cuadro"></span>valor unidad</div>
+  </div>
+</section>
+
+<div id="aviso"></div>
+</main>
+
+<script>
+const ir = id => document.querySelectorAll(".pantalla").forEach(p => p.hidden = p.id !== id);
+let t;
+const aviso = msg => { const a = document.getElementById("aviso"); a.textContent = msg; a.classList.add("on");
+  clearTimeout(t); t = setTimeout(() => a.classList.remove("on"), 1800); };
+
+document.addEventListener("click", async e => {
+  const nav = e.target.closest("[data-ir]");
+  if (nav) return ir(nav.dataset.ir);
+  const acc = e.target.closest("[data-accion]");
+  if (acc) {
+    try { aviso((await (await fetch("/api/" + acc.dataset.accion, {method: "POST"})).json()).mensaje); }
+    catch { aviso("Sin conexión con el servidor"); }
+  }
+});
+
+async function cargar() {
+  const d = await (await fetch("/api/estado")).json();
+  document.querySelectorAll("[data-bind]").forEach(el => {
+    const v = el.dataset.bind.split(".").reduce((o, k) => o?.[k], d);
+    if (v !== undefined) el.textContent = v;
+  });
+}
+cargar();
+</script>
+</body>
+</html>

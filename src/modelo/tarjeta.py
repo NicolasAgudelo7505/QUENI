@@ -1,36 +1,17 @@
-from .constantes import tarjetasDebito, civicas
-from .excepciones import MontoInvalidoError  
 import random
-#TODO Restriccion De Crear Una Unica Tarjeta De Cada Tipo
+
+from .excepciones import MontoInvalidoError
+
 class Tarjeta:
-    lista_numeros = []
-
-    def __init__(self):
-        self.numero = 0
-        self.crearTarjeta()
-
-    def crearTarjeta(self):
-        while True:
-            numero = random.randint(1000000000, 9999999999)
-            if numero not in self.lista_numeros:
-                break
-
+    def __init__(self, numero: int):
         self.numero = numero
-        self.lista_numeros.append(self.numero)
-
-
-class TarjetaDebito(Tarjeta):
-    lista_numeros = tarjetasDebito  # valida y guarda contra esta lista
-
 
 class Civica(Tarjeta):
-    lista_numeros = civicas  # valida y guarda contra esta otra
-
-    def __init__(self):
-        super().__init__()
+    def __init__(self, numero):
+        super().__init__(numero)
         self.saldo = 0
 
     def recargar(self, monto: float) -> None:
         if monto <= 0:
-            raise MontoInvalidoError("El monto debe ser positivo")  # CAMBIO
+            raise MontoInvalidoError("El monto debe ser positivo")
         self.saldo += monto

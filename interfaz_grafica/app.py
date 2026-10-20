@@ -209,8 +209,8 @@ class ServicioQueni:
             "tasas": [{"de": a, "a": b, "tasa": t} for (a, b), t in constantes.TASAS_DE_CAMBIO.items()],
             "tarjeta": None if deb is None else {
                 "numero": _agrupar(deb.numero),
-                "expira": deb.fecha_expiracion,
-                "cvv": deb.cvv,
+                "expira": getattr(deb, "fecha_expiracion", None) or "XX/XX",
+                "cvv": getattr(deb, "cvv", None) or "XXX",
                 "titular": u.nombre.upper(),
             },
             "civica": None if civ is None else {

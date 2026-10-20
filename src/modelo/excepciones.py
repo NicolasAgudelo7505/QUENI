@@ -1,41 +1,4 @@
-"""
-excepciones.py
-
-Excepciones personalizadas de la billetera digital.
-
-Jerarquía:
-
-    ValueError                      (excepción estándar de Python)
-    └── BilleteraError              (base de TODAS las excepciones del proyecto)
-        ├── MontoInvalidoError
-        ├── SaldoInsuficienteError
-        ├── BolsilloNoExisteError
-        ├── BolsilloDuplicadoError
-        ├── MetaInvalidaError
-        ├── MetaNoDefinidaError
-        ├── MetaVencidaError
-        ├── CDTInvalidoError
-        ├── DivisaNoSoportadaError
-        ├── OperacionNoPermitidaError
-        └── TarjetaNoExisteError
-
-¿Por qué heredan de ValueError y no directamente de Exception?
-Porque así el código que ya existía (los tests y el menú, que hacen
-`except ValueError`) sigue funcionando sin cambiar nada, y a la vez
-ahora se puede capturar de forma más específica:
-
-    except SaldoInsuficienteError   -> solo errores de saldo
-    except BilleteraError           -> cualquier error propio del proyecto
-    except ValueError               -> sigue funcionando como antes
-
-Este archivo no importa nada del resto del paquete, por eso cualquier
-otro módulo puede importarlo sin riesgo de imports circulares.
-"""
-
-
 class BilleteraError(ValueError):
-    """Excepción base de todo el proyecto. Capturarla atrapa cualquier
-    error de negocio de la billetera digital."""
 
     def __init__(self, mensaje: str = "Error en la billetera"):
         self.mensaje = mensaje
@@ -55,10 +18,7 @@ class MontoInvalidoError(BilleteraError):
 
 class SaldoInsuficienteError(BilleteraError):
     """No hay dinero suficiente en el disponible o en un bolsillo.
-
-    Además del mensaje, guarda cuánto había y cuánto se necesitaba,
-    para que quien capture el error pueda usar esos datos.
-    """
+    Guarda cuánto había y cuánto se necesitaba."""
 
     def __init__(self, mensaje: str = "Saldo insuficiente", saldo: float = None, requerido: float = None):
         self.saldo = saldo
@@ -113,8 +73,7 @@ class MetaVencidaError(BilleteraError):
 # ----------------------------------------------------------------------
 
 class CDTInvalidoError(BilleteraError):
-    """Los datos para abrir un CDT no cumplen las reglas (monto mínimo
-    o plazo)."""
+    """Los datos para abrir un CDT no cumplen las reglas (monto mínimo o plazo)."""
 
     def __init__(self, mensaje: str = "Los datos del CDT no son válidos"):
         super().__init__(mensaje)
@@ -129,17 +88,51 @@ class DivisaNoSoportadaError(BilleteraError):
 
 
 class OperacionNoPermitidaError(BilleteraError):
-    """La operación existe pero no está permitida de esa forma
-    (por ejemplo, mover dinero a un bolsillo de divisa con el método
-    equivocado)."""
+    """La operación existe pero no está permitida de esa forma."""
 
     def __init__(self, mensaje: str = "Operación no permitida"):
         super().__init__(mensaje)
 
 
 class TarjetaNoExisteError(BilleteraError):
-    """Se intentó operar con una tarjeta que no está registrada."""
+    """Se intentó operar con una tarjeta que no está registrada en la billetera."""
 
     def __init__(self, mensaje: str = "La tarjeta no existe", numero: int = None):
         self.numero = numero
+        super().__init__(mensaje)
+
+
+class TarjetaDuplicadaError(BilleteraError):
+    """Se intentó crear una segunda tarjeta del mismo tipo en una billetera."""
+
+    def __init__(self, mensaje: str = "Ya existe una tarjeta de este tipo", tipo: str = None):
+        self.tipo = tipo
+        super().__init__(mensaje)
+
+
+# ----------------------------------------------------------------------
+# Usuarios y cuentas (QUENI)
+# ----------------------------------------------------------------------
+
+class UsuarioDuplicadoError(BilleteraError):
+    """Se intentó registrar un documento que ya existe."""
+
+    def __init__(self, mensaje: str = "Ya existe un usuario con ese documento", documento: str = None):
+        self.documento = documento
+        super().__init__(mensaje)
+
+
+class UsuarioNoExisteError(BilleteraError):
+    """Se buscó un documento que no está registrado."""
+
+    def __init__(self, mensaje: str = "El usuario no existe", documento: str = None):
+        self.documento = documento
+        super().__init__(mensaje)
+
+
+class CuentaNoExisteError(BilleteraError):
+    """Se buscó un número de cuenta que no existe."""
+
+    def __init__(self, mensaje: str = "La cuenta no existe", numero_cuenta: int = None):
+        self.numero_cuenta = numero_cuenta
         super().__init__(mensaje)

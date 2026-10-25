@@ -16,10 +16,11 @@ MONTO_MINIMO_CDT = 500000
 MONEDAS = ["COP", "USD", "EUR"]
 TASAS_DE_CAMBIO = {
     ("COP", "USD"): 0.00025,
-    ("USD", "COP"): 3200,
+    ("USD", "COP"): 4000,
     ("COP", "EUR"): 0.00023,
+    ("EUR", "COP"): 4348,
 }
 
 # Tipos de transacciones
-TIPOS_GASTO = ["retiro", "envio_saliente", "recarga_civica", "cambio_divisa"]
-TIPOS_INGRESO = ["deposito", "envio_entrante"]
+TIPOS_GASTO = ["retiro", "envio_saliente", "recarga_civica"]
+TIPOS_INGRESO = ["deposito", "envio_entrante", "cobro_cdt"]

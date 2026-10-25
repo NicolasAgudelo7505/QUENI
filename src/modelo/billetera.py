@@ -237,6 +237,34 @@ class Billetera:
                 fecha_vencimiento=fecha_vencimiento,
             )
         )
+
+        self.registrar_transaccion(
+            "apertura_cdt",
+            monto,
+            origen=origen,
+            destino="cdt",
+        )
+        return True
+
+    def redimir_cdt(self, cdt: CDT) -> bool:
+        fecha = date.today()
+        if cdt not in self.cdts:
+            raise CDTInvalidoError("El CDT no pertenece a esta billetera o ya fue redimido")
+
+        if fecha < cdt.fecha_vencimiento:
+            raise OperacionNoPermitidaError("El CDT aún no ha vencido")
+
+        valor_final = cdt.calcular_valor_proyectado()
+        valor_generado = valor_final - cdt.monto
+        self.acreditar(valor_final)
+        self.cdts.remove(cdt)
+
+        self.registrar_transaccion(
+            "cobro_cdt",
+            valor_generado,
+            origen="cdt",
+            destino="disponible",
+                                   )
         return True
 
     # ------------------------------------------------------------------
@@ -244,7 +272,7 @@ class Billetera:
     # ------------------------------------------------------------------
 
     def cambiar_divisas(
-        self, monto: float, tipo_divisa: tuple[str, str], origen: str = None
+            self, monto: float, tipo_divisa: tuple[str, str], origen: str = None
     ) -> bool:
         if monto <= 0:
             raise MontoInvalidoError("El monto debe ser mayor a cero")
@@ -252,22 +280,36 @@ class Billetera:
         if tipo_divisa not in constantes.TASAS_DE_CAMBIO:
             raise DivisaNoSoportadaError("La tasa de cambio es incorrecta", par=tipo_divisa)
 
-        moneda_destino = tipo_divisa[1]
+        moneda_origen, moneda_destino = tipo_divisa
         tasa = constantes.TASAS_DE_CAMBIO[tipo_divisa]
         monto_convertido = monto * tasa
 
-        # Primero se debita (puede fallar); solo después se crea el bolsillo de la divisa.
+        # El origen tiene que coincidir con la moneda que se quiere cambiar.
+        if moneda_origen == "COP":
+            if origen in constantes.MONEDAS:
+                raise OperacionNoPermitidaError(
+                    "Para cambiar desde COP use el disponible o un bolsillo normal"
+                )
+        elif origen != moneda_origen:
+            raise OperacionNoPermitidaError(
+                f"Para cambiar desde {moneda_origen} debe usar el bolsillo '{moneda_origen}'"
+            )
+
+        # Primero se debita (puede fallar); solo después se acredita el destino.
         self.debitar(monto, origen)
 
-        if moneda_destino not in self.bolsillos:
-            self.crear_bolsillo(nombre=moneda_destino)
-        self.bolsillos[moneda_destino].depositar(monto_convertido)
+        if moneda_destino == "COP":
+            self.acreditar(monto_convertido)  # los pesos vuelven al disponible
+        else:
+            if moneda_destino not in self.bolsillos:
+                self.crear_bolsillo(nombre=moneda_destino)
+            self.bolsillos[moneda_destino].depositar(monto_convertido)
 
         self.registrar_transaccion(
             "cambio_divisa",
             monto,
             origen=origen,
-            destino=moneda_destino,
+            destino="disponible" if moneda_destino == "COP" else moneda_destino,
             tasa_aplicada=tasa,
         )
         return True

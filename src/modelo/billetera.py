@@ -16,19 +16,21 @@ from .excepciones import (
     OperacionNoPermitidaError,
     TarjetaNoExisteError,
 )
+from .protocolos import Impuesto, Impuesto4x1000
 
 
 class Billetera:
     """Maneja el dinero de UN solo usuario: disponible, bolsillos, CDTs,
     tarjetas e historial. No conoce a Usuario ni a QUENI."""
 
-    def __init__(self, numero_cuenta: int, disponible: float = 0.0):
+    def __init__(self, numero_cuenta: int, disponible: float = 0.0, impuesto: Impuesto | None = None):
         self.numero_cuenta = numero_cuenta
         self.disponible = disponible
         self.bolsillos: dict[str, Bolsillo] = {}
         self.tarjetas: dict[str,Tarjeta] = {}
         self.cdts: list[CDT] = []
         self.historial: list[Transaccion] = []
+        self.impuesto = impuesto if impuesto is not None else Impuesto4x1000()
 
     # ------------------------------------------------------------------
     # Operaciones básicas reutilizables
@@ -96,11 +98,6 @@ class Billetera:
                     acumulado += transaccion.monto
         return acumulado
 
-    def calcular_4x1000(self, monto: float) -> float:
-        acumulado = self.calcular_acumulado_mensual()
-        tope_exento = constantes.TOPE_MENSUAL * constantes.VALOR_UVT
-        monto_gravable = max(0, min(monto, acumulado + monto - tope_exento))
-        return monto_gravable * constantes.IMPUESTO_4X1000
 
     # ------------------------------------------------------------------
     # Depósitos y retiros
@@ -122,9 +119,9 @@ class Billetera:
     def retirar_dinero(self, monto: float, origen: str = None) -> None:
         if monto <= 0:
             raise MontoInvalidoError("El monto inválido, debe ser mayor a cero")
-
-        impuesto = self.calcular_4x1000(monto)
-        acumulado_actualizado = self.calcular_acumulado_mensual() + monto
+        acomulado = self.calcular_acumulado_mensual()
+        impuesto = self.impuesto.calcular(monto, acomulado)
+        acumulado_actualizado = acomulado + monto
 
         self.debitar(monto + impuesto, origen)
 

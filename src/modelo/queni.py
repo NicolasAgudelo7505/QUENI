@@ -10,8 +10,7 @@ from .excepciones import (
     UsuarioDuplicadoError,
     UsuarioNoExisteError,
     CuentaNoExisteError,
-    TarjetaDuplicadaError,
-    TarjetaNoExisteError
+    TarjetaDuplicadaError
 )
 
 
@@ -83,9 +82,9 @@ class QUENI:
 
         if destino is origen:
             raise OperacionNoPermitidaError("No puede enviar dinero a su propia cuenta")
-
-        impuesto = origen.calcular_4x1000(monto)
-        acumulado_actualizado = origen.calcular_acumulado_mensual() + monto
+        acomulado = origen.calcular_acumulado_mensual()
+        impuesto = origen.impuesto.calcular(monto, acomulado)
+        acumulado_actualizado = acomulado + monto
 
         origen.debitar(monto + impuesto, bolsillo_origen)
         destino.acreditar(monto)

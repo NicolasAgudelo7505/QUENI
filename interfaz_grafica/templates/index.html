@@ -5,57 +5,108 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QUENI</title>
 <style>
-:root{--fondo:#0f0e0e;--panel:#262121;--panel-h:#332b2b;--acento:#ac4d4d;--suave:#9c5050;--texto:#a9a3a3;--flecha:#878181;--claro:#d9d9d9;--oscuro:#513131;--tarjeta:#18151f;--tarjeta-txt:#7c4f4f;--civica:#3e8a2b}
+:root{--fondo:#0f0e0e;--panel:#262121;--panel-h:#332b2b;--acento:#ac4d4d;--acento-h:#bb5a5a;--suave:#9c5050;--texto:#a9a3a3;--flecha:#878181;--claro:#d9d9d9;--oscuro:#513131;--tarjeta:#18151f;--tarjeta-txt:#7c4f4f;--civica:#3e8a2b;--pos:#7fc46b;--neg:#d98080;--borde:#3a3131}
 *{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
 body{background:var(--fondo);color:var(--texto);font-family:Arial,sans-serif;display:flex;justify-content:center}
-.app{width:100%;max-width:360px;height:100vh;max-height:640px;position:relative}
-.pantalla{display:flex;flex-direction:column;height:100%}
-.pantalla[hidden]{display:none}
-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px 0;min-height:68px}
+.app{width:100%;max-width:360px;height:100vh;height:100dvh;max-height:640px;position:relative;overflow:hidden}
+.pantalla{display:flex;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden;padding-bottom:24px}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px 0;min-height:68px;flex:none}
 header h1{font-size:24px;font-weight:400}
 header img{width:54px;height:54px;object-fit:contain}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
 .volver svg{width:46px;height:34px;transition:opacity .15s}.volver:hover svg{opacity:.7}
 svg{display:block}
-.centro{display:flex;justify-content:center}
-.etq{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;text-align:left;line-height:1.3}
+.etq{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;text-align:center;line-height:1.3}
 .cuadro,.pildora,.bandera{background:var(--panel);transition:background .15s}
-button.cuadro:hover,button.pildora:hover,button.bandera:hover{background:var(--panel-h)}
-.cuadro{width:64px;height:78px;border-radius:10px}
+button:hover>.cuadro,button:hover>.pildora,button:hover>.bandera{background:var(--panel-h)}
+.cuadro{width:64px;height:78px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.cuadro.dato{width:128px;color:var(--claro);font-size:14px;font-weight:700;padding:0 6px;text-align:center}
 .pildora{width:84px;height:46px;border-radius:23px}
 .pildora.sm{width:76px;height:44px;border-radius:22px}
 .pildora svg{width:100%;height:100%}
 .bandera{width:54px;height:60px;clip-path:polygon(0 0,50% 25%,100% 0,100% 100%,0 100%)}
-.acciones{display:flex;gap:12px;justify-content:center;align-items:flex-start;margin-top:70px}
-.acciones.b{gap:20px;margin-top:40px}
+.acciones{display:flex;gap:12px;justify-content:center;align-items:flex-start;margin-top:36px}
+.acciones.b{gap:20px;margin-top:22px}
+.acciones.fila2{width:312px;margin:26px auto 0;justify-content:flex-start}
 .col{display:flex;flex-direction:column;gap:8px}
+.enlace{color:var(--texto);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:8px 10px;align-self:center}
+.enlace:hover{color:var(--claro)}
+.sesion{display:block;margin-top:2px;padding:4px 0;font-size:12px}
 /* tarjeta de cuenta */
-.cuenta{position:relative;width:320px;height:130px;margin:18px auto 0;background:var(--panel);border-radius:30px;overflow:hidden;padding:22px 22px}
+.cuenta{position:relative;width:320px;min-height:130px;margin:18px auto 0;background:var(--panel);border-radius:30px;overflow:hidden;padding:22px 22px}
 .cuenta svg{position:absolute;inset:0;width:100%;height:100%}
 .cuenta p{position:relative;font-size:15px}.cuenta p+p{font-size:12px;margin:10px 0 0 8px}
+.cuenta p.saldo{font-size:20px;color:var(--claro);margin:8px 0 0 8px}
 /* bolsillos */
-.capsula{position:relative;width:330px;height:210px;margin:30px auto 0;background:var(--panel);border-radius:105px;text-align:center;padding-top:16px;font-size:14px}
-.claro{position:absolute;left:16%;top:24%;width:62%;height:67%;background:var(--claro);border-radius:16px;transform:rotate(-.8deg);text-align:left;padding:16% 12px 0;color:var(--oscuro)}
+.capsula{position:relative;width:330px;height:210px;margin:30px auto 0;background:var(--panel);border-radius:105px;text-align:center;padding-top:16px;font-size:14px;flex:none}
+.claro{position:absolute;left:16%;top:24%;width:62%;height:67%;background:var(--claro);border-radius:16px;transform:rotate(-.8deg);text-align:left;padding:13% 12px 0;color:var(--oscuro);overflow:hidden}
 .claro::after{content:"";position:absolute;top:9%;right:10%;width:16px;height:16px;border-radius:50%;background:var(--panel)}
 .claro b{display:block;font-size:17px}.claro span{font-size:13px;font-weight:700}
+.claro small{display:block;font-size:11px;margin-top:3px;line-height:1.25}
+.selector{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px;font-size:12px;min-height:30px}
+.selector button{width:30px;height:30px;border-radius:50%;background:var(--panel);font-size:18px;line-height:1}
+.selector button:hover{background:var(--panel-h)}
 /* tarjeta bancaria */
-.banco{position:relative;width:270px;height:350px;margin:30px auto 0;background:var(--tarjeta);border-radius:36px;padding:52px 10px 0;cursor:pointer}
+.banco{position:relative;width:270px;height:350px;margin:30px auto 0;background:var(--tarjeta);border-radius:36px;padding:52px 10px 0;cursor:pointer;flex:none}
 .banco small{display:block;font-size:11px}.banco div{color:var(--tarjeta-txt);font-size:16px;margin:4px 0 28px}
 .banco .tit{position:absolute;left:10px;bottom:30px;margin:0;font-size:15px;font-weight:700}
 .banco img{position:absolute;right:14px;bottom:14px;width:48px}
+.nota{text-align:center;font-size:12px;margin-top:14px}
 /* cívica */
-.civica{position:relative;width:320px;height:250px;margin:60px auto 0;background:var(--civica);border:1px solid var(--suave);color:#fff}
+.civica{position:relative;width:320px;height:250px;margin:44px auto 0;background:var(--civica);border:1px solid var(--suave);color:#fff;flex:none}
 .civica svg{position:absolute;inset:0;width:100%;height:100%}
 .civica h2{position:absolute;left:3%;top:25%;font-size:26px;font-weight:400}
 .civica i{position:absolute;left:3%;top:44.6%;width:11.7%;height:5.8%;background:var(--claro)}
 .civica p{position:absolute;right:5%;font-size:11px}
-#aviso{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--panel);padding:8px 14px;border-radius:12px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.saldo-civica{text-align:center;color:var(--claro);font-size:16px;margin:16px 0 14px}
+.centro{display:flex;justify-content:center;margin-top:8px}
+/* formularios */
+.panel{background:var(--panel);border-radius:30px;width:320px;margin:22px auto 0;padding:22px;flex:none}
+.pestanas{display:flex;gap:6px;margin-bottom:18px;background:var(--fondo);border-radius:22px;padding:4px}
+.pestanas button{flex:1;padding:9px 0;border-radius:18px;font-size:13px}
+.pestanas button[aria-selected=true]{background:var(--panel-h);color:var(--claro)}
+.campo{margin-bottom:14px}
+.campo label{display:block;font-size:12px;margin-bottom:6px}
+.campo input,.campo select{width:100%;background:var(--fondo);color:var(--claro);border:1px solid var(--borde);border-radius:14px;padding:11px 14px;font:inherit;font-size:14px}
+.campo input:focus,.campo select:focus{outline:2px solid var(--acento);outline-offset:0;border-color:var(--acento)}
+.campo select{appearance:auto}
+.campo small{display:block;font-size:11px;margin-top:5px;line-height:1.35;min-height:0}
+.campo small:empty{display:none}
+.principal{background:var(--acento);color:#fff;border-radius:23px;padding:12px 24px;font-size:14px;transition:background .15s}
+.principal:hover{background:var(--acento-h)}
+.principal:disabled{opacity:.5;cursor:wait}
+.secundario{padding:12px 16px;font-size:14px;border-radius:23px}
+.secundario:hover{color:var(--claro)}
+.botones{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.botones.ancho .principal{width:100%}
+.error{color:var(--neg);font-size:13px;margin:8px 0;min-height:0;line-height:1.35}
+.error:empty{display:none}
+/* modal */
+#modal{position:absolute;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;z-index:5}
+#modal form{width:100%;max-height:92%;overflow-y:auto;background:var(--panel);border-radius:28px 28px 0 0;padding:22px 22px 24px}
+#modal h2{font-size:20px;font-weight:400;color:var(--claro);margin-bottom:16px}
+/* listas */
+.lista{list-style:none;padding:0 18px;display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.lista li{background:var(--panel);border-radius:14px;padding:11px 14px}
+.fila-t{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--claro)}
+.fila-t .pos{color:var(--pos)}.fila-t .neg{color:var(--neg)}
+.det{font-size:11px;margin-top:4px;line-height:1.4}
+.vacio{text-align:center;font-size:13px;padding:30px 24px;line-height:1.5}
+.bloque{background:var(--panel);border-radius:22px;margin:14px 18px 0;padding:16px 18px}
+.bloque h2{font-size:15px;font-weight:400;color:var(--claro);margin-bottom:8px}
+.dato-f{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 0}
+.dato-f span:last-child{color:var(--claro);text-align:right}
+.alerta{color:var(--neg);font-size:12px;margin-top:8px;line-height:1.4}
+#aviso{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--panel-h);color:var(--claro);padding:9px 14px;border-radius:12px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:92%;text-align:center;z-index:9}
 #aviso.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <!-- definiciones SVG reutilizables -->
-<svg width="0" height="0" style="position:absolute">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <marker id="pta" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto"><path d="M0,0L4,2L0,4z" fill="#ac4d4d"/></marker>
     <marker id="ptf" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto"><path d="M0,0L4,2L0,4z" fill="#878181"/></marker>
@@ -72,11 +123,34 @@ button.cuadro:hover,button.pildora:hover,button.bandera:hover{background:var(--p
 
 <main class="app">
 
+<!-- ACCESO -->
+<section class="pantalla" id="acceso" hidden>
+  <header><h1>QUENI</h1><img src="/static/logo.png" alt=""></header>
+  <div class="panel">
+    <div class="pestanas" role="tablist">
+      <button type="button" role="tab" data-modo="login" aria-selected="true">Ingresar</button>
+      <button type="button" role="tab" data-modo="registro" aria-selected="false">Crear cuenta</button>
+    </div>
+    <form id="form-acceso" autocomplete="off">
+      <div class="campo" data-solo="registro" hidden><label for="a-nombre">Nombre completo</label><input id="a-nombre" name="nombre" maxlength="60" required disabled></div>
+      <div class="campo"><label for="a-documento">Documento</label><input id="a-documento" name="documento" inputmode="text" maxlength="20" required></div>
+      <div class="campo" data-solo="registro" hidden><label for="a-sueldo">Sueldo mensual</label><input id="a-sueldo" name="sueldo" type="number" min="0" step="any" inputmode="decimal" required disabled></div>
+      <div class="campo" data-solo="registro" hidden><label for="a-saldo">Saldo inicial (opcional)</label><input id="a-saldo" name="saldo_inicial" type="number" min="0" step="any" inputmode="decimal" disabled></div>
+      <p class="error" id="acceso-error" role="alert"></p>
+      <div class="botones ancho"><button class="principal" id="acceso-ok" type="submit">Ingresar</button></div>
+    </form>
+  </div>
+</section>
+
 <!-- MENÚ -->
-<section class="pantalla" id="menu">
-  <header><h1 data-bind="usuario">nombre de usuario</h1><img src="/static/logo.png" alt="QUENI"></header>
-  <div class="cuenta"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><use href="#deco"/></svg>
-    <p>cuenta: <span data-bind="cuenta.tipo">tipo</span></p><p data-bind="cuenta.llave">llave cuenta</p></div>
+<section class="pantalla" id="menu" hidden>
+  <header>
+    <div><h1 data-bind="usuario.nombre">nombre de usuario</h1><button class="enlace sesion" id="salir" style="padding-left:0">Cerrar sesión</button></div>
+    <img src="/static/logo.png" alt="QUENI">
+  </header>
+  <div class="cuenta"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><use href="#deco"/></svg>
+    <p>cuenta: <span data-bind="cuenta.tipo">tipo</span></p><p data-bind="cuenta.llave">llave cuenta</p>
+    <p class="saldo" data-bind="cuenta.disponible" data-fmt="cop">$0</p></div>
   <div class="acciones">
     <button class="etq" data-ir="bolsillos"><span class="cuadro"></span>Bolsillos</button>
     <button class="etq" data-ir="tarjetas"><span class="cuadro"></span>Tarjetas</button>
@@ -86,13 +160,20 @@ button.cuadro:hover,button.pildora:hover,button.bandera:hover{background:var(--p
       <button class="etq" data-accion="sacar"><span class="pildora"><svg><use href="#sacar"/></svg></span>Sacar</button>
     </div>
   </div>
+  <div class="acciones fila2">
+    <button class="etq" data-accion="depositar"><span class="cuadro"></span>Depositar</button>
+    <button class="etq" data-ir="historial"><span class="cuadro"></span>Historial</button>
+    <button class="etq" data-ir="analisis"><span class="cuadro"></span>Análisis</button>
+  </div>
 </section>
 
 <!-- BOLSILLOS -->
 <section class="pantalla" id="bolsillos" hidden>
-  <header><h1>Tus Bolsillos</h1><button class="volver" data-ir="menu"><svg><use href="#atras"/></svg></button></header>
-  <div class="capsula"><span data-bind="bolsillo.nombre">Nombre Bolsillo</span>
-    <div class="claro"><b>Disponible</b><span data-bind="bolsillo.disponible">$xxx.xxx</span></div></div>
+  <header><h1>Tus Bolsillos</h1><button class="volver" data-ir="menu" aria-label="Volver"><svg><use href="#atras"/></svg></button></header>
+  <div class="capsula"><span id="b-nombre">Nombre Bolsillo</span>
+    <div class="claro"><b>Disponible</b><span id="b-monto">$xxx.xxx</span><div id="b-extra"></div></div></div>
+  <div class="selector" data-sel="bolsillos" hidden><button data-paso="-1" aria-label="Bolsillo anterior">‹</button><span></span><button data-paso="1" aria-label="Bolsillo siguiente">›</button></div>
+  <button class="enlace" data-accion="nuevo_bolsillo">+ Nuevo bolsillo</button>
   <div class="acciones b">
     <button class="etq" data-accion="enviar_a_bolsillo"><span class="pildora sm"><svg><use href="#enviar"/></svg></span>Enviar<br>a bolsillo</button>
     <button class="etq" data-accion="sacar_de_bolsillo"><span class="pildora sm"><svg><use href="#sacar"/></svg></span>sacar de<br>bolsillo</button>
@@ -102,27 +183,32 @@ button.cuadro:hover,button.pildora:hover,button.bandera:hover{background:var(--p
 
 <!-- BOLSILLO EXTRANJERO -->
 <section class="pantalla" id="extranjero" hidden>
-  <header><h1>Tu bolsillo Extranjero</h1><button class="volver" data-ir="bolsillos"><svg><use href="#atras"/></svg></button></header>
-  <div class="capsula" style="margin-top:40px"><span data-bind="bolsillo_extranjero.nombre">Nombre Bolsillo</span>
-    <div class="claro"><b>Disponible</b><span data-bind="bolsillo_extranjero.disponible">$xxx.xxx</span></div></div>
+  <header><h1>Tu bolsillo Extranjero</h1><button class="volver" data-ir="bolsillos" aria-label="Volver"><svg><use href="#atras"/></svg></button></header>
+  <div class="capsula" style="margin-top:40px"><span id="e-nombre">Nombre Bolsillo</span>
+    <div class="claro"><b>Disponible</b><span id="e-monto">$xxx.xxx</span><div id="e-extra"></div></div></div>
+  <div class="selector" data-sel="extranjero" hidden><button data-paso="-1" aria-label="Moneda anterior">‹</button><span></span><button data-paso="1" aria-label="Moneda siguiente">›</button></div>
+  <div class="acciones b">
+    <button class="etq" data-accion="cambiar_divisas"><span class="bandera"></span>Cambiar<br>divisas</button>
+  </div>
 </section>
 
 <!-- TARJETAS (clic en la tarjeta -> Cívica) -->
 <section class="pantalla" id="tarjetas" hidden>
-  <header><h1></h1><button class="volver" data-ir="menu"><svg><use href="#atras"/></svg></button></header>
-  <div class="banco" data-ir="civica">
+  <header><h1></h1><button class="volver" data-ir="menu" aria-label="Volver"><svg><use href="#atras"/></svg></button></header>
+  <div class="banco" data-ir="civica" role="link" tabindex="0" aria-label="Ver tarjeta Cívica">
     <small>Número de la tarjeta</small><div data-bind="tarjeta.numero">XXXX-XXXX-XXXX-XXXX</div>
     <small>Fecha de expiración</small><div data-bind="tarjeta.expira">XX/XX</div>
     <small>CVV</small><div data-bind="tarjeta.cvv">XXX</div>
     <div class="tit" data-bind="tarjeta.titular">NOMBRE TITULAR</div><img src="/static/logo.png" alt="">
   </div>
+  <p class="nota">Toca la tarjeta para ver tu Cívica</p>
 </section>
 
 <!-- CÍVICA -->
 <section class="pantalla" id="civica" hidden>
-  <header><h1>Tu Tarjeta Cívica</h1><button class="volver" data-ir="tarjetas"><svg><use href="#atras"/></svg></button></header>
+  <header><h1>Tu Tarjeta Cívica</h1><button class="volver" data-ir="tarjetas" aria-label="Volver"><svg><use href="#atras"/></svg></button></header>
   <div class="civica">
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="#000" stroke-width="1">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="#000" stroke-width="1" aria-hidden="true">
       <path vector-effect="non-scaling-stroke" d="M0 100L100 0"/><path vector-effect="non-scaling-stroke" d="M9.5 100L100 0"/>
       <path vector-effect="non-scaling-stroke" d="M0 100C25 80 45 58 65 43C78 36 88 36 94 45C99 53 100 60 100 66"/></svg>
     <h2>Cívica</h2><i></i>
@@ -130,46 +216,402 @@ button.cuadro:hover,button.pildora:hover,button.bandera:hover{background:var(--p
     <p style="top:77%" data-bind="civica.cc">C.C XXXXXXXX</p>
     <p style="top:87%" data-bind="civica.civica">Civ. XXXXXXXX</p>
   </div>
+  <p class="saldo-civica">Saldo: <span data-bind="civica.saldo" data-fmt="cop">$0</span></p>
+  <div class="centro"><button class="etq" data-accion="recargar_civica"><span class="pildora"><svg><use href="#enviar"/></svg></span>Recargar</button></div>
 </section>
 
-<!-- CDT (clic en el título -> menú) -->
+<!-- CDT (clic en el título o el logo -> menú) -->
 <section class="pantalla" id="cdt" hidden>
-  <header><h1 data-ir="menu" style="cursor:pointer">Tu CDT</h1><img src="/static/logo.png" alt="QUENI"></header>
-  <div class="cuenta"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><use href="#deco"/></svg>
-    <p>cuenta: <span data-bind="cdt.tipo">tipo</span></p><p data-bind="cdt.numero">xxxxxxxx</p></div>
-  <div class="acciones" style="gap:44px">
-    <div class="etq"><span class="cuadro"></span>Unidades</div>
-    <div class="etq"><span class="cuadro"></span>valor unidad</div>
+  <header><h1 data-ir="menu" style="cursor:pointer" role="link" tabindex="0">Tu CDT</h1><img src="/static/logo.png" alt="Volver al menú" data-ir="menu" style="cursor:pointer"></header>
+  <div class="cuenta"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><use href="#deco"/></svg>
+    <p>cdt: <span id="c-tipo">tipo</span></p><p id="c-num">xxxxxxxx</p></div>
+  <div class="selector" data-sel="cdt" hidden><button data-paso="-1" aria-label="CDT anterior">‹</button><span></span><button data-paso="1" aria-label="CDT siguiente">›</button></div>
+  <div class="acciones" style="gap:20px">
+    <div class="etq"><span class="cuadro dato" id="c-monto">—</span>Monto invertido</div>
+    <div class="etq"><span class="cuadro dato" id="c-valor">—</span>Valor al vencimiento</div>
   </div>
+  <button class="enlace" data-accion="abrir_cdt" style="margin-top:18px">+ Abrir un CDT</button>
 </section>
 
-<div id="aviso"></div>
+<!-- HISTORIAL -->
+<section class="pantalla" id="historial" hidden>
+  <header><h1>Historial</h1><button class="volver" data-ir="menu" aria-label="Volver"><svg><use href="#atras"/></svg></button></header>
+  <ul class="lista" id="lista-historial"></ul>
+</section>
+
+<!-- ANÁLISIS -->
+<section class="pantalla" id="analisis" hidden>
+  <header><h1>Tu análisis</h1><button class="volver" data-ir="menu" aria-label="Volver"><svg><use href="#atras"/></svg></button></header>
+  <div id="contenido-analisis"></div>
+</section>
+
+<!-- FORMULARIO EMERGENTE (reutilizable) -->
+<div id="modal" hidden>
+  <form id="modal-form" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" autocomplete="off">
+    <h2 id="modal-titulo"></h2>
+    <div id="modal-campos"></div>
+    <p class="error" id="modal-error" role="alert"></p>
+    <div class="botones">
+      <button type="button" class="secundario" id="modal-cancelar">Cancelar</button>
+      <button type="submit" class="principal" id="modal-ok">Aceptar</button>
+    </div>
+  </form>
+</div>
+
+<div id="aviso" role="status" aria-live="polite"></div>
 </main>
 
 <script>
-const ir = id => document.querySelectorAll(".pantalla").forEach(p => p.hidden = p.id !== id);
-let t;
-const aviso = msg => { const a = document.getElementById("aviso"); a.textContent = msg; a.classList.add("on");
-  clearTimeout(t); t = setTimeout(() => a.classList.remove("on"), 1800); };
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-document.addEventListener("click", async e => {
+/* ---------- formato ---------- */
+const nCOP = new Intl.NumberFormat("es-CO", {maximumFractionDigits: 0});
+const cop = n => "$" + nCOP.format(Math.round(n ?? 0) || 0);
+const dinero = (n, m) => m === "COP" ? cop(n) : new Intl.NumberFormat("es-CO", {style: "currency", currency: m}).format(n);
+const fecha = iso => new Date(iso.length > 10 ? iso : iso + "T00:00:00").toLocaleDateString("es-CO");
+const fechaHora = iso => new Date(iso).toLocaleString("es-CO", {dateStyle: "medium", timeStyle: "short"});
+const NOMBRE_MONEDA = {USD: "Dólares", EUR: "Euros"};
+const el = (tag, texto, clase) => { const e = document.createElement(tag); if (texto != null) e.textContent = texto; if (clase) e.className = clase; return e; };
+
+/* ---------- estado y navegación ---------- */
+let E = null;
+const sel = {bolsillos: 0, extranjero: 0, cdt: 0};
+const alEntrar = {};
+function ir(id) {
+  $$(".pantalla").forEach(p => p.hidden = p.id !== id);
+  alEntrar[id]?.();
+}
+
+let temporizador;
+function aviso(msg) {
+  const a = $("#aviso"); a.textContent = msg; a.classList.add("on");
+  clearTimeout(temporizador); temporizador = setTimeout(() => a.classList.remove("on"), 2600);
+}
+
+async function api(ruta, metodo = "GET", cuerpo) {
+  try {
+    const r = await fetch("/api/" + ruta, {
+      method: metodo,
+      headers: {"Content-Type": "application/json"},
+      body: metodo === "GET" ? undefined : JSON.stringify(cuerpo || {}),
+    });
+    let datos = {}; try { datos = await r.json(); } catch {}
+    if (r.status === 401 && ruta !== "login") { E = null; ir("acceso"); }
+    return {ok: r.ok, datos};
+  } catch {
+    return {ok: false, datos: {mensaje: "Sin conexión con el servidor"}};
+  }
+}
+
+async function cargar() {
+  const r = await api("estado");
+  if (!r.ok) return false;
+  E = r.datos; render();
+  return true;
+}
+
+/* ---------- pintado ---------- */
+function render() {
+  $$("[data-bind]").forEach(e => {
+    const v = e.dataset.bind.split(".").reduce((o, k) => o?.[k], E);
+    if (v !== undefined && v !== null) e.textContent = e.dataset.fmt === "cop" ? cop(v) : v;
+  });
+  pintarBolsillos(); pintarExtranjeros(); pintarCDT();
+}
+
+// Ajusta el índice, actualiza el selector ‹ n de m › y devuelve el elemento actual.
+function actual(clave, lista) {
+  const n = lista.length;
+  sel[clave] = n ? Math.min(sel[clave], n - 1) : 0;
+  const s = $(`.selector[data-sel="${clave}"]`);
+  s.hidden = n < 2;
+  $("span", s).textContent = `${sel[clave] + 1} de ${n}`;
+  return lista[sel[clave]];
+}
+
+function pintarBolsillos() {
+  const b = actual("bolsillos", E.bolsillos);
+  const extra = $("#b-extra"); extra.replaceChildren();
+  if (!b) {
+    $("#b-nombre").textContent = "Sin bolsillos";
+    $("#b-monto").textContent = "—";
+    extra.append(el("small", "Crea el primero con «Nuevo bolsillo»"));
+    return;
+  }
+  $("#b-nombre").textContent = b.nombre;
+  $("#b-monto").textContent = cop(b.saldo);
+  extra.append(el("small", `Rinde ${cop(b.rendimiento_mensual)} al mes`));
+  if (b.meta) {
+    extra.append(el("small", `Meta ${cop(b.meta.monto)} · ${fecha(b.meta.fecha)}`));
+    const a = b.ahorro;
+    if (a?.error) extra.append(el("small", a.error));
+    else if (a) extra.append(el("small", a.monto_sugerido === 0 ? "Meta alcanzada" :
+      `Ahorra ${cop(a.monto_sugerido)} al mes` + (a.viable ? "" : " (supera tu sueldo)")));
+  }
+}
+
+function pintarExtranjeros() {
+  const x = actual("extranjero", E.extranjeros);
+  const extra = $("#e-extra"); extra.replaceChildren();
+  if (!x) {
+    $("#e-nombre").textContent = "Sin bolsillos extranjeros";
+    $("#e-monto").textContent = "—";
+    extra.append(el("small", "Se crean al cambiar divisas"));
+    return;
+  }
+  $("#e-nombre").textContent = `${NOMBRE_MONEDA[x.moneda] || x.moneda} (${x.moneda})`;
+  $("#e-monto").textContent = dinero(x.saldo, x.moneda);
+}
+
+function pintarCDT() {
+  const c = actual("cdt", E.cdts);
+  if (!c) {
+    $("#c-tipo").textContent = "sin CDT";
+    $("#c-num").textContent = `Abre uno desde ${cop(E.limites.monto_minimo_cdt)}`;
+    $("#c-monto").textContent = "—"; $("#c-valor").textContent = "—";
+    return;
+  }
+  $("#c-tipo").textContent = `${c.plazo_meses} meses · ${(c.tasa * 100).toFixed(1).replace(".", ",")}% E.A.`;
+  $("#c-num").textContent = `Vence el ${fecha(c.fecha_vencimiento)}`;
+  $("#c-monto").textContent = cop(c.monto);
+  $("#c-valor").textContent = cop(c.valor_proyectado);
+}
+
+/* ---------- historial ---------- */
+const TIPOS = {
+  deposito: "Depósito", retiro: "Retiro", envio_saliente: "Envío", envio_entrante: "Dinero recibido",
+  recarga_civica: "Recarga Cívica", cambio_divisa: "Cambio de divisa",
+  movimiento_bolsillos: "Movimiento entre bolsillos", apertura_cdt: "Apertura de CDT",
+};
+const donde = v => v == null ? "Disponible" : v === "fuera" ? "Fuera de QUENI" : v;
+function detalle(t) {
+  switch (t.tipo) {
+    case "envio_saliente": return `Para la cuenta ${t.destino}` + (t.origen ? ` · desde ${t.origen}` : "");
+    case "envio_entrante": return `De la cuenta ${t.origen}`;
+    case "deposito": return `A ${donde(t.destino)}`;
+    case "cambio_divisa": return `${donde(t.origen)} → ${t.destino} · tasa ${t.tasa}`;
+    case "movimiento_bolsillos": return `${donde(t.origen)} → ${donde(t.destino)}`;
+    default: return `Desde ${donde(t.origen)}`;
+  }
+}
+alEntrar.historial = async () => {
+  const ul = $("#lista-historial"); ul.replaceChildren();
+  const r = await api("historial");
+  if (!r.ok) return;
+  if (!r.datos.items.length) { ul.append(el("li", "Aún no tienes movimientos.", "vacio")); return; }
+  for (const t of r.datos.items) {
+    const li = el("li");
+    const fila = el("div", null, "fila-t");
+    const signo = t.naturaleza === "ingreso" ? "+" : t.naturaleza === "gasto" ? "−" : "";
+    fila.append(el("span", TIPOS[t.tipo] || t.tipo),
+      el("span", signo + dinero(t.monto, t.moneda), t.naturaleza === "ingreso" ? "pos" : t.naturaleza === "gasto" ? "neg" : ""));
+    li.append(fila, el("div", detalle(t), "det"));
+    const extra = [fechaHora(t.fecha)];
+    if (t.impuesto) extra.push(`4x1000: ${cop(t.impuesto)}`);
+    if (t.saldo_resultante != null) extra.push(`saldo ${cop(t.saldo_resultante)}`);
+    li.append(el("div", extra.join(" · "), "det"));
+    ul.append(li);
+  }
+};
+
+/* ---------- análisis ---------- */
+function bloque(titulo, filas, nota) {
+  const b = el("div", null, "bloque"); b.append(el("h2", titulo));
+  for (const [k, v] of filas) { const f = el("div", null, "dato-f"); f.append(el("span", k), el("span", v)); b.append(f); }
+  if (nota) b.append(el("p", nota, "alerta"));
+  return b;
+}
+alEntrar.analisis = async () => {
+  const cont = $("#contenido-analisis"); cont.replaceChildren();
+  const r = await api("analisis");
+  if (!r.ok) return;
+  const a = r.datos;
+
+  if (a.mes.hay_datos) cont.append(bloque("Este mes", [
+    ["Ingresado", cop(a.mes.total_ingresado)], ["Gastado", cop(a.mes.total_gastado)], ["Movimientos", a.mes.numero_transacciones]]));
+  else cont.append(bloque("Este mes", [["Sin movimientos todavía", ""]]));
+
+  const p = a.proyeccion;
+  if (p.suficiente_historial) cont.append(bloque("Proyección del próximo mes", [
+    ["Ingreso estimado", cop(p.ingreso_estimado)], ["Gasto estimado", cop(p.gasto_estimado)], ["Saldo proyectado", cop(p.saldo_proyectado)]],
+    p.alerta_riesgo ? "Estás gastando más de lo que ingresas." : null));
+  else cont.append(bloque("Proyección del próximo mes", [["Se calcula cuando termine tu primer mes con movimientos", ""]]));
+
+  const nombres = Object.keys(a.ahorros);
+  cont.append(bloque("Ahorro sugerido por bolsillo", nombres.length ? nombres.map(n => {
+    const x = a.ahorros[n];
+    return [n, x.error ? x.error : x.monto_sugerido === 0 ? "Meta alcanzada" :
+      `${cop(x.monto_sugerido)} al mes` + (x.viable ? "" : " (supera tu sueldo)")];
+  }) : [["Ningún bolsillo tiene meta", ""]]));
+  cont.lastChild.style.marginBottom = "8px";
+};
+
+/* ---------- formularios emergentes ---------- */
+const origenes = () => [
+  {v: "", t: `Disponible · ${cop(E.cuenta.disponible)}`},
+  ...E.bolsillos.map(b => ({v: b.nombre, t: `${b.nombre} · ${cop(b.saldo)}`})),
+];
+const bolsilloOpciones = () => E.bolsillos.map(b => ({v: b.nombre, t: `${b.nombre} · ${cop(b.saldo)}`}));
+const bolsilloActual = () => E.bolsillos[sel.bolsillos]?.nombre;
+const avisoTope = () => `Exento hasta ${cop(E.limites.tope_4x1000)} al mes (llevas ${cop(E.limites.acumulado_mes)}); lo que pase de ahí paga 4x1000.`;
+const tasaDe = v => { const [de, a] = (v.par || "").split(">"); return E.tasas.find(t => t.de === de && t.a === a); };
+
+const FORMS = {
+  enviar: {titulo: "Enviar dinero", ok: "Enviar", campos: [
+    {n: "cuenta_destino", l: "Cuenta destino", tipo: "text", inputmode: "numeric", ph: "10 dígitos"},
+    {n: "monto", l: "Monto", tipo: "monto", ayuda: avisoTope},
+    {n: "origen", l: "Desde", tipo: "select", opciones: origenes}]},
+  sacar: {titulo: "Sacar dinero", ok: "Sacar", campos: [
+    {n: "monto", l: "Monto", tipo: "monto", ayuda: avisoTope},
+    {n: "origen", l: "Desde", tipo: "select", opciones: origenes}]},
+  depositar: {titulo: "Depositar dinero", ok: "Depositar", campos: [
+    {n: "monto", l: "Monto", tipo: "monto"}]},
+  enviar_a_bolsillo: {titulo: "Enviar a bolsillo", ok: "Enviar", requiere: "bolsillos", campos: [
+    {n: "bolsillo", l: "Bolsillo", tipo: "select", opciones: bolsilloOpciones, defecto: bolsilloActual},
+    {n: "monto", l: "Monto (sale de tu disponible)", tipo: "monto"}]},
+  sacar_de_bolsillo: {titulo: "Sacar de bolsillo", ok: "Sacar", requiere: "bolsillos", campos: [
+    {n: "bolsillo", l: "Bolsillo", tipo: "select", opciones: bolsilloOpciones, defecto: bolsilloActual},
+    {n: "monto", l: "Monto (pasa a tu disponible)", tipo: "monto"}]},
+  nuevo_bolsillo: {titulo: "Nuevo bolsillo", ok: "Crear", campos: [
+    {n: "nombre", l: "Nombre", tipo: "text", max: 30},
+    {n: "monto_meta", l: "Meta de ahorro", tipo: "monto", opcional: true, ayuda: "Si pones meta, también debes poner fecha."},
+    {n: "fecha_meta", l: "Fecha meta", tipo: "date", opcional: true}]},
+  abrir_cdt: {titulo: "Abrir CDT", ok: "Abrir CDT", campos: [
+    {n: "monto", l: "Monto", tipo: "monto", ayuda: () => `Mínimo ${cop(E.limites.monto_minimo_cdt)}`},
+    {n: "plazo_meses", l: "Plazo en meses", tipo: "number", min: 1, step: 1,
+     ayuda: v => { const m = parseFloat(v.monto), p = parseInt(v.plazo_meses);
+       return m > 0 && p > 0 ? `Valor al vencimiento: ${cop(m * Math.pow(1 + E.limites.tasa_cdt, p / 12))}` : ""; }},
+    {n: "origen", l: "Desde", tipo: "select", opciones: origenes}]},
+  cambiar_divisas: {titulo: "Cambiar divisas", ok: "Cambiar", campos: [
+    {n: "par", l: "Cambio", tipo: "select", opciones: () => E.tasas.map(t => ({v: `${t.de}>${t.a}`, t: `${t.de} → ${t.a}`}))},
+    {n: "monto", l: "Monto a cambiar", tipo: "monto", ayuda: v => { const t = tasaDe(v), m = parseFloat(v.monto);
+       return t ? `Tasa ${t.tasa}` + (m > 0 ? ` · recibes ${dinero(m * t.tasa, t.a)}` : "") : ""; }},
+    {n: "origen", l: "Desde", tipo: "select", opciones: origenes, visible: v => (v.par || "").startsWith("COP")}]},
+  recargar_civica: {titulo: "Recargar Cívica", ok: "Recargar", campos: [
+    {n: "monto", l: "Monto", tipo: "monto"},
+    {n: "origen", l: "Desde", tipo: "select", opciones: origenes}]},
+};
+
+const modal = $("#modal"), formEl = $("#modal-form");
+let formActual = null, disparador = null;
+const valores = () => Object.fromEntries(new FormData(formEl));
+
+function abrirForm(nombre) {
+  const def = FORMS[nombre];
+  if (!def || !E) return;
+  if (def.requiere === "bolsillos" && !E.bolsillos.length) { aviso("Primero crea un bolsillo"); return; }
+  formActual = {nombre, def}; disparador = document.activeElement;
+  $("#modal-titulo").textContent = def.titulo;
+  $("#modal-ok").textContent = def.ok;
+  $("#modal-error").textContent = "";
+  const cont = $("#modal-campos"); cont.replaceChildren();
+  for (const c of def.campos) {
+    const caja = el("div", null, "campo"); caja.id = "caja-" + c.n;
+    const lab = el("label", c.l + (c.opcional ? " (opcional)" : "")); lab.htmlFor = "f-" + c.n;
+    let ctl;
+    if (c.tipo === "select") {
+      ctl = document.createElement("select");
+      for (const o of c.opciones()) ctl.add(new Option(o.t, o.v));
+      const d = c.defecto?.(); if (d) ctl.value = d;
+    } else {
+      ctl = document.createElement("input");
+      ctl.type = c.tipo === "monto" ? "number" : c.tipo;
+      if (c.tipo === "monto") { ctl.min = "0"; ctl.step = "any"; ctl.inputMode = "decimal"; }
+      if (c.tipo === "number") { ctl.min = c.min; ctl.step = c.step; ctl.inputMode = "numeric"; }
+      if (c.inputmode) ctl.inputMode = c.inputmode;
+      if (c.max) ctl.maxLength = c.max;
+      if (c.tipo === "date") ctl.min = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+      if (c.ph) ctl.placeholder = c.ph;
+    }
+    ctl.id = "f-" + c.n; ctl.name = c.n;
+    // un <select required> con valor "" (Disponible) se considera "sin elegir": solo los inputs son required
+    ctl.required = c.tipo !== "select" && !c.opcional;
+    const ayuda = el("small"); ayuda.id = "ayuda-" + c.n; ctl.setAttribute("aria-describedby", ayuda.id);
+    caja.append(lab, ctl, ayuda); cont.append(caja);
+  }
+  modal.hidden = false;
+  actualizarForm();
+  $("#modal-campos input, #modal-campos select")?.focus();
+}
+
+function actualizarForm() {
+  if (!formActual) return;
+  const v = valores();
+  for (const c of formActual.def.campos) {
+    const visible = !c.visible || c.visible(v);
+    $("#caja-" + c.n).hidden = !visible;
+    $("#f-" + c.n).disabled = !visible;
+    const texto = typeof c.ayuda === "function" ? c.ayuda(v) : c.ayuda;
+    $("#ayuda-" + c.n).textContent = texto || "";
+  }
+}
+
+function cerrarForm() {
+  modal.hidden = true; formActual = null;
+  disparador?.focus?.();
+}
+
+formEl.addEventListener("input", actualizarForm);
+formEl.addEventListener("change", actualizarForm);
+$("#modal-cancelar").addEventListener("click", cerrarForm);
+modal.addEventListener("click", e => { if (e.target === modal) cerrarForm(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) cerrarForm(); });
+
+formEl.addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!formActual) return;
+  const boton = $("#modal-ok"); boton.disabled = true;   // evita doble envío
+  $("#modal-error").textContent = "";
+  const r = await api(formActual.nombre, "POST", valores());
+  boton.disabled = false;
+  if (!r.ok) { $("#modal-error").textContent = r.datos.mensaje || "No se pudo completar la operación"; return; }
+  cerrarForm(); aviso(r.datos.mensaje); await cargar();
+});
+
+/* ---------- acceso ---------- */
+let modo = "login";
+function ponerModo(m) {
+  modo = m;
+  $$("[data-modo]").forEach(b => b.setAttribute("aria-selected", b.dataset.modo === m));
+  $$("[data-solo]").forEach(d => { const on = d.dataset.solo === m; d.hidden = !on; $("input", d).disabled = !on; });
+  $("#acceso-ok").textContent = m === "login" ? "Ingresar" : "Crear cuenta";
+  $("#acceso-error").textContent = "";
+}
+$$("[data-modo]").forEach(b => b.addEventListener("click", () => ponerModo(b.dataset.modo)));
+$("#form-acceso").addEventListener("submit", async e => {
+  e.preventDefault();
+  const boton = $("#acceso-ok"); boton.disabled = true;
+  const r = await api(modo, "POST", Object.fromEntries(new FormData(e.target)));
+  boton.disabled = false;
+  if (!r.ok) { $("#acceso-error").textContent = r.datos.mensaje || "No se pudo continuar"; return; }
+  e.target.reset(); ponerModo("login");
+  if (await cargar()) { ir("menu"); aviso(r.datos.mensaje); }
+});
+$("#salir").addEventListener("click", async () => {
+  await api("logout", "POST"); E = null; sel.bolsillos = sel.extranjero = sel.cdt = 0; ir("acceso");
+});
+
+/* ---------- eventos globales ---------- */
+document.addEventListener("click", e => {
+  const paso = e.target.closest("[data-paso]");
+  if (paso && E) {
+    const clave = paso.closest(".selector").dataset.sel;
+    const n = {bolsillos: E.bolsillos, extranjero: E.extranjeros, cdt: E.cdts}[clave].length;
+    sel[clave] = (sel[clave] + Number(paso.dataset.paso) + n) % n;
+    return render();
+  }
   const nav = e.target.closest("[data-ir]");
   if (nav) return ir(nav.dataset.ir);
   const acc = e.target.closest("[data-accion]");
-  if (acc) {
-    try { aviso((await (await fetch("/api/" + acc.dataset.accion, {method: "POST"})).json()).mensaje); }
-    catch { aviso("Sin conexión con el servidor"); }
-  }
+  if (acc) abrirForm(acc.dataset.accion);
+});
+document.addEventListener("keydown", e => {   // elementos no-botón con data-ir
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-ir]:not(button)")) { e.preventDefault(); e.target.click(); }
 });
 
-async function cargar() {
-  const d = await (await fetch("/api/estado")).json();
-  document.querySelectorAll("[data-bind]").forEach(el => {
-    const v = el.dataset.bind.split(".").reduce((o, k) => o?.[k], d);
-    if (v !== undefined) el.textContent = v;
-  });
-}
-cargar();
+(async () => { ponerModo("login"); (await cargar()) ? ir("menu") : ir("acceso"); })();
 </script>
 </body>
 </html>

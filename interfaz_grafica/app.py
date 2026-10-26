@@ -1,75 +1,416 @@
-"""QUENI - versión web (Flask). Ejecutar:  pip install flask  &&  python app.py"""
-from dataclasses import dataclass, asdict
+"""QUENI - versión web (Flask).
 
-from flask import Flask, jsonify, render_template
+Ejecutar:  pip install flask  &&  python app.py
 
+Capas:
+  - src/modelo/     dominio (reglas de negocio, sin nada de web)
+  - ServicioQueni   traduce peticiones web -> llamadas al dominio (este archivo)
+  - Flask           rutas HTTP/JSON que consume templates/index.html
+"""
+import math
+import os
+import pickle
+import re
+import secrets
+import sys
+import threading
+from datetime import date
+from functools import wraps
+from pathlib import Path
 
-# ---------- Modelos (POO) ----------
-@dataclass
-class Cuenta:
-    tipo: str = "tipo"
-    llave: str = "llave cuenta"
+from flask import Flask, jsonify, render_template, request, session
 
+# El dominio vive en QUENI/src/modelo (paquete "modelo")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-@dataclass
-class Bolsillo:
-    nombre: str = "Nombre Bolsillo"
-    disponible: str = "$xxx.xxx"
+from modelo import QUENI, AnalizadorFinanciero, constantes
+from modelo.excepciones import (
+    BilleteraError,
+    SaldoInsuficienteError,
+    UsuarioNoExisteError,
+)
 
-
-@dataclass
-class TarjetaBancaria:
-    numero: str = "XXXX-XXXX-XXXX-XXXX"
-    expira: str = "XX/XX"
-    cvv: str = "XXX"
-    titular: str = "NOMBRE TITULAR"
-
-
-@dataclass
-class TarjetaCivica:
-    titular: str = "NOMBRE TITULAR CIVICA"
-    cc: str = "C.C XXXXXXXX"
-    civica: str = "Civ. XXXXXXXX"
-
-
-@dataclass
-class CDT:
-    tipo: str = "tipo"
-    numero: str = "xxxxxxxx"
-    unidades: int = 0
-    valor_unidad: str = "$0"
+DATOS = Path(__file__).with_name("datos")
+ARCHIVO_DATOS = DATOS / "queni.pkl"
+MONTO_MAXIMO = 1e13
 
 
-# ---------- Servicio: aquí se conectará el backend / base de datos ----------
+# ---------- Errores propios de la capa web ----------
+class DatoInvalidoError(BilleteraError):
+    """Un dato de la petición falta o no tiene el formato esperado."""
+
+
+class SesionExpirada(Exception):
+    """La sesión apunta a un usuario que ya no existe."""
+
+
+# ---------- Utilidades de formato y validación ----------
+def cop(valor: float) -> str:
+    return "$" + f"{round(valor):,}".replace(",", ".")
+
+
+def _monto(datos, campo="monto", etiqueta="El monto", requerido=True):
+    valor = datos.get(campo)
+    if valor is None or valor == "":
+        if requerido:
+            raise DatoInvalidoError(f"{etiqueta} es obligatorio")
+        return None
+    if isinstance(valor, bool):
+        raise DatoInvalidoError(f"{etiqueta} debe ser un número")
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        raise DatoInvalidoError(f"{etiqueta} debe ser un número")
+    if not math.isfinite(numero) or numero > MONTO_MAXIMO:
+        raise DatoInvalidoError(f"{etiqueta} no es válido")
+    return round(numero, 2)
+
+
+def _entero(datos, campo, etiqueta, maximo=10**15):
+    valor = datos.get(campo)
+    if valor is None or valor == "" or isinstance(valor, bool):
+        raise DatoInvalidoError(f"{etiqueta} es obligatorio")
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        raise DatoInvalidoError(f"{etiqueta} debe ser un número entero")
+    if not math.isfinite(numero) or not numero.is_integer() or not 0 < numero <= maximo:
+        raise DatoInvalidoError(f"{etiqueta} no es válido")
+    return int(numero)
+
+
+def _texto(datos, campo, etiqueta, maximo=60, requerido=True):
+    valor = datos.get(campo)
+    if valor is None or (isinstance(valor, str) and not valor.strip()):
+        if requerido:
+            raise DatoInvalidoError(f"{etiqueta} es obligatorio")
+        return None
+    if not isinstance(valor, str):
+        raise DatoInvalidoError(f"{etiqueta} no es válido")
+    valor = valor.strip()
+    if len(valor) > maximo:
+        raise DatoInvalidoError(f"{etiqueta} es demasiado largo (máximo {maximo} caracteres)")
+    return valor
+
+
+def _origen(datos):
+    """None = disponible; cualquier texto = nombre de un bolsillo."""
+    valor = datos.get("origen")
+    if valor is None or valor == "":
+        return None
+    if not isinstance(valor, str):
+        raise DatoInvalidoError("El origen no es válido")
+    return valor
+
+
+def _fecha(datos, campo, etiqueta):
+    valor = datos.get(campo)
+    if valor is None or valor == "":
+        return None
+    try:
+        return date.fromisoformat(str(valor))
+    except ValueError:
+        raise DatoInvalidoError(f"{etiqueta} no es una fecha válida")
+
+
+def _mensaje_error(error: BilleteraError) -> str:
+    if isinstance(error, SaldoInsuficienteError) and error.saldo is not None and error.requerido is not None:
+        return f"{error.mensaje}: tienes {cop(error.saldo)} y necesitas {cop(error.requerido)}"
+    return error.mensaje
+
+
+def _agrupar(numero) -> str:
+    texto = str(numero)
+    return "-".join(texto[i:i + 4] for i in range(0, len(texto), 4))
+
+
+# ---------- Servicio: une la web con el dominio ----------
 class ServicioQueni:
-    def __init__(self):
-        self.usuario = "nombre de usuario"
-        self.cuenta = Cuenta()
-        self.bolsillo = Bolsillo()
-        self.bolsillo_extranjero = Bolsillo()
-        self.tarjeta = TarjetaBancaria()
-        self.civica = TarjetaCivica()
-        self.cdt = CDT()
+    def __init__(self, archivo: Path = ARCHIVO_DATOS):
+        self.archivo = archivo
+        self.lock = threading.RLock()
+        self.queni = self._cargar()
 
-    def estado(self):
+    # --- persistencia (pickle local; reemplazable por una base de datos) ---
+    def _cargar(self) -> QUENI:
+        try:
+            with open(self.archivo, "rb") as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            return QUENI()
+        except Exception:
+            app.logger.exception("No se pudo leer %s; se inicia vacío", self.archivo)
+            return QUENI()
+
+    def guardar(self) -> None:
+        try:
+            self.archivo.parent.mkdir(parents=True, exist_ok=True)
+            temporal = self.archivo.with_suffix(".tmp")
+            with open(temporal, "wb") as f:
+                pickle.dump(self.queni, f)
+            os.replace(temporal, self.archivo)  # escritura atómica
+        except Exception:
+            app.logger.exception("No se pudieron guardar los datos")
+
+    # --- sesión ---
+    def usuario(self, documento: str):
+        try:
+            return self.queni.buscar_usuario(documento)
+        except UsuarioNoExisteError:
+            raise SesionExpirada()
+
+    def registrar(self, datos) -> str:
+        nombre = _texto(datos, "nombre", "El nombre")
+        documento = _texto(datos, "documento", "El documento", maximo=20)
+        if not re.fullmatch(r"[0-9A-Za-z]{4,20}", documento):
+            raise DatoInvalidoError("El documento debe tener entre 4 y 20 letras o números")
+        sueldo = _monto(datos, "sueldo", "El sueldo")
+        saldo = _monto(datos, "saldo_inicial", "El saldo inicial", requerido=False) or 0.0
+
+        usuario = self.queni.registrar_usuario(nombre, documento, sueldo, saldo)
+        numero_cuenta = usuario.billetera.numero_cuenta
+        self.queni.asignar_tarjeta_debito(numero_cuenta)
+        self.queni.asignar_tarjeta_civica(numero_cuenta)
+        return documento
+
+    def ingresar(self, datos) -> str:
+        documento = _texto(datos, "documento", "El documento", maximo=20)
+        return self.queni.buscar_usuario(documento).documento
+
+    # --- lectura ---
+    def estado(self, documento: str) -> dict:
+        u = self.usuario(documento)
+        w = u.billetera
+        ahorros = AnalizadorFinanciero(u).ahorro_mensual_sugerido()
+
+        bolsillos, extranjeros = [], []
+        for nombre, b in w.bolsillos.items():
+            if nombre in constantes.MONEDAS:
+                extranjeros.append({"moneda": nombre, "saldo": b.saldo})
+                continue
+            bolsillos.append({
+                "nombre": nombre,
+                "saldo": b.saldo,
+                "rendimiento_mensual": b.calcular_rendimiento_mensual(),
+                "meta": (
+                    {"monto": b.monto_meta, "fecha": b.fecha_meta.isoformat()}
+                    if b.monto_meta is not None else None
+                ),
+                "ahorro": ahorros.get(nombre),
+            })
+
+        deb = w.tarjetas.get("Debito")
+        civ = w.tarjetas.get("Civica")
         return {
-            "usuario": self.usuario,
-            "cuenta": asdict(self.cuenta),
-            "bolsillo": asdict(self.bolsillo),
-            "bolsillo_extranjero": asdict(self.bolsillo_extranjero),
-            "tarjeta": asdict(self.tarjeta),
-            "civica": asdict(self.civica),
-            "cdt": asdict(self.cdt),
+            "usuario": {"nombre": u.nombre, "documento": u.documento, "sueldo": u.sueldo},
+            "cuenta": {"tipo": "Ahorros", "llave": str(w.numero_cuenta), "disponible": w.disponible},
+            "bolsillos": bolsillos,
+            "extranjeros": extranjeros,
+            "tasas": [{"de": a, "a": b, "tasa": t} for (a, b), t in constantes.TASAS_DE_CAMBIO.items()],
+            "tarjeta": None if deb is None else {
+                "numero": _agrupar(deb.numero),
+                "expira": getattr(deb, "fecha_expiracion", None) or "XX/XX",
+                "cvv": getattr(deb, "cvv", None) or "XXX",
+                "titular": u.nombre.upper(),
+            },
+            "civica": None if civ is None else {
+                "titular": u.nombre.upper(),
+                "cc": f"C.C {u.documento}",
+                "civica": f"Civ. {civ.numero}",
+                "saldo": civ.saldo,
+            },
+            "cdts": [
+                {
+                    "monto": c.monto,
+                    "plazo_meses": c.plazo_meses,
+                    "tasa": c.tasa_interes,
+                    "fecha_apertura": c.fecha_apertura.isoformat(),
+                    "fecha_vencimiento": c.fecha_vencimiento.isoformat(),
+                    "valor_proyectado": c.calcular_valor_proyectado(),
+                }
+                for c in w.cdts
+            ],
+            "limites": {
+                "monto_minimo_cdt": constantes.MONTO_MINIMO_CDT,
+                "tasa_cdt": constantes.RENTABILIDAD_CDT,
+                "tope_4x1000": constantes.TOPE_MENSUAL * constantes.VALOR_UVT,
+                "acumulado_mes": w.calcular_acumulado_mensual(),
+            },
         }
 
-    def ejecutar(self, accion):
-        # TODO: lógica real (enviar, sacar, bolsillos...)
-        return {"ok": True, "mensaje": f"{accion.replace('_', ' ').capitalize()} (sin backend aún)"}
+    def historial(self, documento: str, limite: int = 100) -> dict:
+        w = self.usuario(documento).billetera
+        items = []
+        for t in reversed(w.historial[-limite:]):
+            if t.tipo in constantes.TIPOS_GASTO:
+                naturaleza = "gasto"
+            elif t.tipo in constantes.TIPOS_INGRESO:
+                naturaleza = "ingreso"
+            else:
+                naturaleza = "neutro"
+            moneda = t.origen if (t.tipo == "cambio_divisa" and t.origen in constantes.MONEDAS) else "COP"
+            items.append({
+                "fecha": t.fecha.isoformat(),
+                "tipo": t.tipo,
+                "naturaleza": naturaleza,
+                "monto": t.monto,
+                "moneda": moneda,
+                "origen": t.origen,
+                "destino": t.destino,
+                "impuesto": t.impuesto_4x1000,
+                "tasa": t.tasa_aplicada,
+                "saldo_resultante": t.saldo_resultante,
+            })
+        return {"items": items}
+
+    def analisis(self, documento: str) -> dict:
+        u = self.usuario(documento)
+        analizador = AnalizadorFinanciero(u)
+        hoy = date.today()
+        return {
+            "sueldo": u.sueldo,
+            "mes": analizador.estadisticas(inicio=hoy.replace(day=1), fin=hoy),
+            "total": analizador.estadisticas(),
+            "proyeccion": analizador.predecir_gastos_e_ingresos(),
+            "ahorros": analizador.ahorro_mensual_sugerido(),
+        }
+
+    # --- acciones: cada una devuelve el mensaje que ve la persona ---
+    def _enviar(self, u, d):
+        cuenta = _entero(d, "cuenta_destino", "La cuenta destino")
+        monto, origen = _monto(d), _origen(d)
+        impuesto = self.queni.enviar(u.documento, cuenta, monto, origen)
+        extra = f" (4x1000: {cop(impuesto)})" if impuesto else ""
+        return f"Enviaste {cop(monto)}{extra}"
+
+    def _sacar(self, u, d):
+        monto, origen = _monto(d), _origen(d)
+        w = u.billetera
+        impuesto = w.calcular_4x1000(monto)
+        w.retirar_dinero(monto, origen)
+        extra = f" (4x1000: {cop(impuesto)})" if impuesto else ""
+        return f"Sacaste {cop(monto)}{extra}"
+
+    def _depositar(self, u, d):
+        monto = _monto(d)
+        u.billetera.depositar_dinero(monto)
+        return f"Depositaste {cop(monto)}"
+
+    def _enviar_a_bolsillo(self, u, d):
+        bolsillo = _texto(d, "bolsillo", "El bolsillo")
+        monto = _monto(d)
+        u.billetera.mover_entre_bolsillos(bolsillo, monto)
+        return f"Enviaste {cop(monto)} a {bolsillo}"
+
+    def _sacar_de_bolsillo(self, u, d):
+        bolsillo = _texto(d, "bolsillo", "El bolsillo")
+        monto = _monto(d)
+        u.billetera.mover_entre_bolsillos(None, monto, bolsillo)
+        return f"Sacaste {cop(monto)} de {bolsillo}"
+
+    def _nuevo_bolsillo(self, u, d):
+        nombre = _texto(d, "nombre", "El nombre del bolsillo", maximo=30)
+        monto_meta = _monto(d, "monto_meta", "La meta", requerido=False)
+        fecha_meta = _fecha(d, "fecha_meta", "La fecha meta")
+        u.billetera.crear_bolsillo(nombre, monto_meta, fecha_meta)
+        return f"Bolsillo '{nombre}' creado"
+
+    def _abrir_cdt(self, u, d):
+        monto = _monto(d)
+        plazo = _entero(d, "plazo_meses", "El plazo", maximo=120)
+        u.billetera.crear_cdt(monto, plazo, _origen(d))
+        return f"CDT de {cop(monto)} a {plazo} meses abierto"
+
+    def _cambiar_divisas(self, u, d):
+        par = _texto(d, "par", "El par de monedas")
+        partes = tuple(par.split(">"))
+        monto = _monto(d)
+        # Si se convierte desde una moneda extranjera, el dinero sale de su bolsillo.
+        origen = _origen(d) if partes[0] == "COP" else partes[0]
+        u.billetera.cambiar_divisas(monto, partes, origen)
+        tasa = constantes.TASAS_DE_CAMBIO[partes]
+        return f"Cambiaste {monto:g} {partes[0]} a {monto * tasa:,.2f} {partes[1]}"
+
+    def _recargar_civica(self, u, d):
+        monto = _monto(d)
+        w = u.billetera
+        w.recargar_civica(monto, w.tarjetas.get("Civica"), _origen(d))
+        return f"Recargaste {cop(monto)} en tu Cívica"
+
+    def ejecutar(self, documento: str, accion: str, datos: dict) -> str:
+        return getattr(self, f"_{accion}")(self.usuario(documento), datos)
 
 
+# ---------- Aplicación Flask ----------
 app = Flask(__name__)
+
+
+def _clave_secreta() -> str:
+    """Variable de entorno, o una clave aleatoria guardada en datos/.secret."""
+    clave = os.environ.get("QUENI_SECRET_KEY")
+    if clave:
+        return clave
+    ruta = DATOS / ".secret"
+    if not ruta.exists():
+        DATOS.mkdir(exist_ok=True)
+        ruta.write_text(secrets.token_hex(32))
+        os.chmod(ruta, 0o600)
+    return ruta.read_text().strip()
+
+
+app.secret_key = _clave_secreta()
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+
 servicio = ServicioQueni()
-ACCIONES = {"enviar", "sacar", "enviar_a_bolsillo", "sacar_de_bolsillo"}
+
+# Nombre de la ruta -> acciones que modifican dinero/datos
+ACCIONES = {
+    "enviar", "sacar", "depositar",
+    "enviar_a_bolsillo", "sacar_de_bolsillo", "nuevo_bolsillo",
+    "abrir_cdt", "cambiar_divisas", "recargar_civica",
+}
+
+
+def _ejecutar(funcion, guardar: bool = False):
+    """Ejecuta con candado, guarda si hubo cambios y traduce errores a JSON."""
+    try:
+        with servicio.lock:
+            resultado = funcion()
+            if guardar:
+                servicio.guardar()
+        return jsonify(resultado)
+    except SesionExpirada:
+        session.clear()
+        return jsonify(ok=False, mensaje="Tu sesión expiró. Ingresa de nuevo"), 401
+    except BilleteraError as error:
+        return jsonify(ok=False, mensaje=_mensaje_error(error)), 400
+    except Exception:
+        app.logger.exception("Error inesperado")
+        return jsonify(ok=False, mensaje="Error interno del servidor"), 500
+
+
+def requiere_sesion(vista):
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        if "documento" not in session:
+            return jsonify(ok=False, mensaje="Ingresa para continuar"), 401
+        return vista(*args, **kwargs)
+    return envoltura
+
+
+def requiere_json(vista):
+    """Solo acepta JSON: un formulario de otro sitio no puede enviarlo sin permiso (CSRF)."""
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        if not request.is_json:
+            return jsonify(ok=False, mensaje="Se esperaba JSON"), 415
+        return vista(*args, **kwargs)
+    return envoltura
+
+
+def _datos() -> dict:
+    datos = request.get_json(silent=True)
+    return datos if isinstance(datos, dict) else {}
 
 
 @app.get("/")
@@ -77,16 +418,67 @@ def inicio():
     return render_template("index.html")
 
 
+# --- sesión ---
+@app.post("/api/registro")
+@requiere_json
+def registro():
+    def hacer():
+        documento = servicio.registrar(_datos())
+        session.clear()
+        session["documento"] = documento
+        return {"ok": True, "mensaje": "Cuenta creada"}
+    return _ejecutar(hacer, guardar=True)
+
+
+@app.post("/api/login")
+@requiere_json
+def login():
+    def hacer():
+        documento = servicio.ingresar(_datos())
+        session.clear()
+        session["documento"] = documento
+        return {"ok": True, "mensaje": "Bienvenido"}
+    return _ejecutar(hacer)
+
+
+@app.post("/api/logout")
+@requiere_json
+def logout():
+    session.clear()
+    return jsonify(ok=True, mensaje="Sesión cerrada")
+
+
+# --- lectura ---
 @app.get("/api/estado")
+@requiere_sesion
 def estado():
-    return jsonify(servicio.estado())
+    return _ejecutar(lambda: servicio.estado(session["documento"]))
 
 
+@app.get("/api/historial")
+@requiere_sesion
+def historial():
+    return _ejecutar(lambda: servicio.historial(session["documento"]))
+
+
+@app.get("/api/analisis")
+@requiere_sesion
+def analisis():
+    return _ejecutar(lambda: servicio.analisis(session["documento"]))
+
+
+# --- acciones ---
 @app.post("/api/<accion>")
+@requiere_json
+@requiere_sesion
 def accion(accion):
     if accion not in ACCIONES:
         return jsonify(ok=False, mensaje="Acción desconocida"), 404
-    return jsonify(servicio.ejecutar(accion))
+
+    def hacer():
+        mensaje = servicio.ejecutar(session["documento"], accion, _datos())
+        return {"ok": True, "mensaje": mensaje}
+    return _ejecutar(hacer, guardar=True)
 
 
 if __name__ == "__main__":

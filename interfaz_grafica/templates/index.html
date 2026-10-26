@@ -164,8 +164,8 @@ button:hover>.cuadro,button:hover>.pildora,button:hover>.bandera{background:var(
       <button type="button" role="tab" data-modo="registro" aria-selected="false">Crear cuenta</button>
     </div>
     <form id="form-acceso" autocomplete="off">
-      <div class="campo" data-solo="registro" hidden><label for="a-nombre">Nombre completo</label><input id="a-nombre" name="nombre" maxlength="150" required disabled></div>
-      <div class="campo"><label for="a-documento">Documento</label><input id="a-documento" name="documento" inputmode="text" maxlength="20" required><small id="a-doc-ayuda"></small></div>
+      <div class="campo" data-solo="registro" hidden><label for="a-nombre">Nombre completo</label><input id="a-nombre" name="nombre" maxlength="60" required disabled></div>
+      <div class="campo"><label for="a-documento">Documento</label><input id="a-documento" name="documento" inputmode="text" maxlength="20" required></div>
       <div class="campo" data-solo="registro" hidden><label for="a-sueldo">Sueldo mensual</label><input id="a-sueldo" name="sueldo" type="number" min="0" step="any" inputmode="decimal" required disabled></div>
       <div class="campo" data-solo="registro" hidden><label for="a-saldo">Saldo inicial (opcional)</label><input id="a-saldo" name="saldo_inicial" type="number" min="0" step="any" inputmode="decimal" disabled></div>
       <p class="error" id="acceso-error" role="alert"></p>
@@ -263,6 +263,7 @@ button:hover>.cuadro,button:hover>.pildora,button:hover>.bandera{background:var(
     <div class="etq"><span class="cuadro dato" id="c-valor">—</span>Valor al vencimiento</div>
   </div>
   <button class="enlace" data-accion="abrir_cdt" style="margin-top:18px">+ Abrir un CDT</button>
+  <button class="enlace" id="btn-redimir" data-accion="redimir_cdt" hidden>Redimir este CDT</button>
 </section>
 
 <!-- HISTORIAL -->
@@ -281,6 +282,7 @@ button:hover>.cuadro,button:hover>.pildora,button:hover>.bandera{background:var(
 <div id="modal" hidden>
   <form id="modal-form" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" autocomplete="off">
     <h2 id="modal-titulo"></h2>
+    <p class="nota" id="modal-resumen" hidden style="text-align:left;margin:0 0 14px;line-height:1.45"></p>
     <div id="modal-campos"></div>
     <p class="error" id="modal-error" role="alert"></p>
     <div class="botones">
@@ -399,6 +401,7 @@ function pintarExtranjeros() {
 
 function pintarCDT() {
   const c = actual("cdt", E.cdts);
+  $("#btn-redimir").hidden = !c;   // solo aparece si hay un CDT activo
   if (!c) {
     $("#c-tipo").textContent = "sin CDT";
     $("#c-num").textContent = `Abre uno desde ${cop(E.limites.monto_minimo_cdt)}`;
@@ -415,7 +418,7 @@ function pintarCDT() {
 const TIPOS = {
   deposito: "Depósito", retiro: "Retiro", envio_saliente: "Envío", envio_entrante: "Dinero recibido",
   recarga_civica: "Recarga Cívica", cambio_divisa: "Cambio de divisa",
-  movimiento_bolsillos: "Movimiento entre bolsillos", apertura_cdt: "Apertura de CDT",
+  movimiento_bolsillos: "Movimiento entre bolsillos", apertura_cdt: "Apertura de CDT", cobro_cdt: "Cobro de CDT",
 };
 const donde = v => v == null ? "Disponible" : v === "fuera" ? "Fuera de QUENI" : v;
 function detalle(t) {
@@ -425,6 +428,7 @@ function detalle(t) {
     case "deposito": return `A ${donde(t.destino)}`;
     case "cambio_divisa": return `${donde(t.origen)} → ${t.destino} · tasa ${t.tasa}`;
     case "movimiento_bolsillos": return `${donde(t.origen)} → ${donde(t.destino)}`;
+    case "cobro_cdt": return "Ganancia del CDT; el capital volvió al disponible";
     default: return `Desde ${donde(t.origen)}`;
   }
 }
@@ -500,10 +504,11 @@ const FORMS = {
     {n: "origen", l: "Desde", tipo: "select", opciones: origenes}]},
   depositar: {titulo: "Depositar dinero", ok: "Depositar", campos: [
     {n: "monto", l: "Monto", tipo: "monto"}]},
-  enviar_a_bolsillo: {titulo: "Enviar a bolsillo", ok: "Enviar", requiere: "bolsillos", campos: [
-    {n: "bolsillo", l: "Bolsillo", tipo: "select", opciones: bolsilloOpciones, defecto: bolsilloActual},
-    {n: "monto", l: "Monto (sale de tu disponible)", tipo: "monto"}]},
-  sacar_de_bolsillo: {titulo: "Sacar de bolsillo", ok: "Sacar", requiere: "bolsillos", campos: [
+  enviar_a_bolsillo: {titulo: "Enviar a bolsillo", ok: "Enviar", requiere: "bolsillos", sinDatos: "Primero crea un bolsillo", campos: [
+    {n: "bolsillo", l: "Bolsillo destino", tipo: "select", opciones: bolsilloOpciones, defecto: bolsilloActual},
+    {n: "origen", l: "Sacar de", tipo: "select", opciones: origenes, excluye: "bolsillo"},
+    {n: "monto", l: "Monto", tipo: "monto"}]},
+  sacar_de_bolsillo: {titulo: "Sacar de bolsillo", ok: "Sacar", requiere: "bolsillos", sinDatos: "Primero crea un bolsillo", campos: [
     {n: "bolsillo", l: "Bolsillo", tipo: "select", opciones: bolsilloOpciones, defecto: bolsilloActual},
     {n: "monto", l: "Monto (pasa a tu disponible)", tipo: "monto"}]},
   nuevo_bolsillo: {titulo: "Nuevo bolsillo", ok: "Crear", campos: [
@@ -516,6 +521,11 @@ const FORMS = {
      ayuda: v => { const m = parseFloat(v.monto), p = parseInt(v.plazo_meses);
        return m > 0 && p > 0 ? `Valor al vencimiento: ${cop(m * Math.pow(1 + E.limites.tasa_cdt, p / 12))}` : ""; }},
     {n: "origen", l: "Desde", tipo: "select", opciones: origenes}]},
+  redimir_cdt: {titulo: "Redimir CDT", ok: "Redimir", requiere: "cdts", sinDatos: "No tienes CDT activos",
+    resumen: () => { const c = E.cdts[sel.cdt];
+      return c.vencido ? `Recibirás ${cop(c.valor_proyectado)} en tu disponible (ganancia de ${cop(c.valor_proyectado - c.monto)}).`
+        : `Este CDT vence el ${fecha(c.fecha_vencimiento)}; hasta esa fecha no se puede redimir.`; },
+    campos: [{n: "indice", tipo: "hidden", valor: () => String(sel.cdt)}]},
   cambiar_divisas: {titulo: "Cambiar divisas", ok: "Cambiar", campos: [
     {n: "par", l: "Cambio", tipo: "select", opciones: () => E.tasas.map(t => ({v: `${t.de}>${t.a}`, t: `${t.de} → ${t.a}`}))},
     {n: "monto", l: "Monto a cambiar", tipo: "monto", ayuda: v => { const t = tasaDe(v), m = parseFloat(v.monto);
@@ -533,13 +543,20 @@ const valores = () => Object.fromEntries(new FormData(formEl));
 function abrirForm(nombre) {
   const def = FORMS[nombre];
   if (!def || !E) return;
-  if (def.requiere === "bolsillos" && !E.bolsillos.length) { aviso("Primero crea un bolsillo"); return; }
+  if (def.requiere && !E[def.requiere].length) { aviso(def.sinDatos || "No disponible"); return; }
   formActual = {nombre, def}; disparador = document.activeElement;
   $("#modal-titulo").textContent = def.titulo;
   $("#modal-ok").textContent = def.ok;
   $("#modal-error").textContent = "";
+  const resumen = def.resumen?.() || "";
+  $("#modal-resumen").textContent = resumen; $("#modal-resumen").hidden = !resumen;
   const cont = $("#modal-campos"); cont.replaceChildren();
   for (const c of def.campos) {
+    if (c.tipo === "hidden") {
+      const oculto = document.createElement("input");
+      oculto.type = "hidden"; oculto.id = "f-" + c.n; oculto.name = c.n; oculto.value = c.valor();
+      cont.append(oculto); continue;
+    }
     const caja = el("div", null, "campo"); caja.id = "caja-" + c.n;
     const lab = el("label", c.l + (c.opcional ? " (opcional)" : "")); lab.htmlFor = "f-" + c.n;
     let ctl;
@@ -565,13 +582,22 @@ function abrirForm(nombre) {
   }
   modal.hidden = false;
   actualizarForm();
-  $("#modal-campos input, #modal-campos select")?.focus();
+  ($("#modal-campos input:not([type=hidden]), #modal-campos select") || $("#modal-ok")).focus();
 }
 
 function actualizarForm() {
   if (!formActual) return;
   const v = valores();
   for (const c of formActual.def.campos) {
+    if (c.tipo === "hidden") continue;
+    if (c.excluye) {   // quita de este select la opción elegida en otro campo (p. ej. el bolsillo destino)
+      const s = $("#f-" + c.n), previo = s.value;
+      const ops = c.opciones().filter(o => o.v === "" || o.v !== v[c.excluye]);
+      if (ops.length !== s.options.length || ops.some((o, i) => o.v !== s.options[i].value)) {
+        s.replaceChildren(...ops.map(o => new Option(o.t, o.v)));
+        s.value = ops.some(o => o.v === previo) ? previo : "";
+      }
+    }
     const visible = !c.visible || c.visible(v);
     $("#caja-" + c.n).hidden = !visible;
     $("#f-" + c.n).disabled = !visible;
@@ -609,24 +635,9 @@ function ponerModo(m) {
   $$("[data-modo]").forEach(b => b.setAttribute("aria-selected", b.dataset.modo === m));
   $$("[data-solo]").forEach(d => { const on = d.dataset.solo === m; d.hidden = !on; $("input", d).disabled = !on; });
   $("#acceso-ok").textContent = m === "login" ? "Ingresar" : "Crear cuenta";
-  // Documento: al registrarse solo números de 4 a 11 dígitos; al ingresar se deja libre (cuentas anteriores)
-  const doc = $("#a-documento");
-  if (m === "registro") {
-    doc.maxLength = 11; doc.minLength = 4; doc.pattern = "[0-9]{4,11}"; doc.inputMode = "numeric";
-    doc.title = "Solo números, de 4 a 11 dígitos";
-    doc.value = doc.value.replace(/\D/g, "").slice(0, 11);
-    $("#a-doc-ayuda").textContent = "Solo números, de 4 a 11 dígitos";
-  } else {
-    doc.maxLength = 20; doc.inputMode = "text";
-    doc.removeAttribute("minlength"); doc.removeAttribute("pattern"); doc.removeAttribute("title");
-    $("#a-doc-ayuda").textContent = "";
-  }
   $("#acceso-error").textContent = "";
 }
 $$("[data-modo]").forEach(b => b.addEventListener("click", () => ponerModo(b.dataset.modo)));
-$("#a-documento").addEventListener("input", e => {   // en el registro, descarta todo lo que no sea número
-  if (modo === "registro") e.target.value = e.target.value.replace(/\D/g, "");
-});
 $("#form-acceso").addEventListener("submit", async e => {
   e.preventDefault();
   const boton = $("#acceso-ok"); boton.disabled = true;

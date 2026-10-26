@@ -1,4 +1,5 @@
 import random
+from datetime import date
 
 from .analizador_financiero import AnalizadorFinanciero
 from .billetera import Billetera
@@ -117,15 +118,18 @@ class QUENI:
     # Tarjetas
     # ------------------------------------------------------------------
 
-    def generar_numero_tarjeta(self, lista: list[int]) -> int:
+    def generar_numero_tarjeta(self, lista: list[int], digitos: int = 10) -> int:
         while True:
-            numero = random.randint(1000000000, 9999999999)
+            numero = random.randint(10 ** (digitos - 1), 10 ** digitos - 1)
             if numero not in lista:
                 return numero  
 
     def crear_tarjeta_debito(self) -> Tarjeta:
-        numero = self.generar_numero_tarjeta(self.tarjetas['Debito'])
-        tarjeta = Tarjeta(numero)
+        numero = self.generar_numero_tarjeta(self.tarjetas['Debito'], digitos=16)
+        hoy = date.today()
+        expiracion = f"{hoy.month:02d}/{(hoy.year + 5) % 100:02d}"  # vigencia de 5 años
+        cvv = f"{random.randint(0, 999):03d}"
+        tarjeta = Tarjeta(numero, fecha_expiracion=expiracion, cvv=cvv)
         self.tarjetas['Debito'].append(tarjeta.numero)
         return tarjeta
 
@@ -150,9 +154,3 @@ class QUENI:
         tarjeta = self.crear_tarjeta_civica()
         billetera.tarjetas['Civica'] = tarjeta
         return tarjeta
-
-
-
-
-
-

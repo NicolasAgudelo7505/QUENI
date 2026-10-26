@@ -40,11 +40,11 @@ class Billetera:
         self,
         tipo: str,
         monto: float,
-        origen: str = None,
-        destino: str = None,
+        origen: str | None = None,
+        destino: str | None = None,
         impuesto: float = 0.0,
-        acumulado_mensual: float = None,
-        tasa_aplicada: float = None,
+        acumulado_mensual: float | None = None,
+        tasa_aplicada: float | None = None,
     ) -> Transaccion:
         transaccion = Transaccion(
             monto=monto,
@@ -60,7 +60,7 @@ class Billetera:
         self.historial.append(transaccion)
         return transaccion
 
-    def debitar(self, monto: float, origen: str = None) -> None:
+    def debitar(self, monto: float, origen: str | None = None) -> None:
         """Descuenta dinero del disponible (origen=None) o de un bolsillo.
         Valida todo antes de tocar cualquier saldo."""
         if monto <= 0:
@@ -103,7 +103,7 @@ class Billetera:
     # Depósitos y retiros
     # ------------------------------------------------------------------
 
-    def depositar_dinero(self, monto: float, destino: str = None) -> None:
+    def depositar_dinero(self, monto: float, destino: str | None = None) -> None:
         if monto <= 0:
             raise MontoInvalidoError("monto invalido, ingrese monto mayor que 0")
 
@@ -116,7 +116,7 @@ class Billetera:
 
         self.registrar_transaccion("deposito", monto, destino=destino)
 
-    def retirar_dinero(self, monto: float, origen: str = None) -> float:
+    def retirar_dinero(self, monto: float, origen: str | None = None) -> float:
         if monto <= 0:
             raise MontoInvalidoError("El monto inválido, debe ser mayor a cero")
         acomulado = self.calcular_acumulado_mensual()
@@ -205,7 +205,7 @@ class Billetera:
         return True
 
     def mover_entre_bolsillos(
-        self, bolsillo_destino: str, monto: float, bolsillo_origen: str = None
+        self, bolsillo_destino: str, monto: float, bolsillo_origen: str | None = None
     ) -> bool:
         if bolsillo_destino in constantes.MONEDAS or (
             bolsillo_origen is not None and bolsillo_origen in constantes.MONEDAS
@@ -241,7 +241,7 @@ class Billetera:
     # CDT
     # ------------------------------------------------------------------
 
-    def crear_cdt(self, monto: float, plazo_meses: int, origen: str = None) -> bool:
+    def crear_cdt(self, monto: float, plazo_meses: int, origen: str | None = None) -> bool:
         if monto < constantes.MONTO_MINIMO_CDT:
             raise CDTInvalidoError(
                 f"El monto debe ser mayor que el monto mínimo del cdt: {constantes.MONTO_MINIMO_CDT}"
@@ -298,7 +298,7 @@ class Billetera:
     # ------------------------------------------------------------------
 
     def cambiar_divisas(
-            self, monto: float, tipo_divisa: tuple[str, str], origen: str = None
+            self, monto: float, tipo_divisa: tuple[str, str], origen: str | None = None
     ) -> bool:
         if monto <= 0:
             raise MontoInvalidoError("El monto debe ser mayor a cero")
@@ -328,7 +328,7 @@ class Billetera:
             self.acreditar(monto_convertido)  # los pesos vuelven al disponible
         else:
             if moneda_destino not in self.bolsillos:
-                self.crear_bolsillo(nombre=moneda_destino)
+                self.bolsillos[moneda_destino] = Bolsillo(nombre=moneda_destino)
             self.bolsillos[moneda_destino].depositar(monto_convertido)
 
         self.registrar_transaccion(
@@ -344,7 +344,7 @@ class Billetera:
     # Tarjetas
     # ------------------------------------------------------------------
 
-    def recargar_civica(self, monto: float, civica: Civica, origen: str = None) -> None:
+    def recargar_civica(self, monto: float, civica: Civica | None, origen: str | None = None) -> None:
         if civica is None or self.tarjetas.get('Civica') is not civica:
             numero = getattr(civica, 'numero', None)
             raise TarjetaNoExisteError(
@@ -361,4 +361,3 @@ class Billetera:
             origen=origen,
             destino=str(civica.numero),
         )
-

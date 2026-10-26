@@ -45,6 +45,15 @@ class QUENI:
 
         self.usuarios[documento] = usuario
         self.cuentas[numero_cuenta] = billetera
+
+        if saldo_inicial > 0:
+            usuario.billetera.registrar_transaccion(
+                monto= saldo_inicial,
+                tipo= "deposito",
+                destino="Disponible",
+                origen="Deposito Inicial",
+
+            )
         return usuario
 
     def buscar_usuario(self, documento: str) -> Usuario:

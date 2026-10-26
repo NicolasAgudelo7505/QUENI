@@ -17,8 +17,8 @@ MONEDAS = ["COP", "USD", "EUR"]
 TASAS_DE_CAMBIO = {
     ("COP", "USD"): 0.00025,
     ("USD", "COP"): 4000,
-    ("COP", "EUR"): 0.00023,
-    ("EUR", "COP"): 4348,
+    ("COP", "EUR"): 0.000244140625,
+    ("EUR", "COP"): 4096,
 }
 
 # Tipos de transacciones

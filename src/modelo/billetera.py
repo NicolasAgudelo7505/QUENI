@@ -177,6 +177,29 @@ class Billetera:
         )
         return True
 
+    def retirar_de_bolsillo(self, monto: float, bolsillo_origen: str) -> bool:
+        if bolsillo_origen in constantes.MONEDAS:
+            raise OperacionNoPermitidaError(
+                "Use cambiar_divisas para sacar dinero de un bolsillo de moneda"
+            )
+        if bolsillo_origen not in self.bolsillos:
+            raise BolsilloNoExisteError(
+                f"No existe el bolsillo '{bolsillo_origen}'", nombre=bolsillo_origen
+            )
+        if monto <= 0:
+            raise MontoInvalidoError("El monto debe ser mayor a cero")
+
+        self.debitar(monto, bolsillo_origen)
+        self.acreditar(monto)
+
+        self.registrar_transaccion(
+            "movimiento_bolsillos",
+            monto,
+            origen=bolsillo_origen,
+            destino=None,  # None = disponible, igual que en mover_entre_bolsillos
+        )
+        return True
+
     def mover_entre_bolsillos(
         self, bolsillo_destino: str, monto: float, bolsillo_origen: str = None
     ) -> bool:

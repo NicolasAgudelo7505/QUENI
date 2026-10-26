@@ -116,7 +116,7 @@ class Billetera:
 
         self.registrar_transaccion("deposito", monto, destino=destino)
 
-    def retirar_dinero(self, monto: float, origen: str = None) -> None:
+    def retirar_dinero(self, monto: float, origen: str = None) -> float:
         if monto <= 0:
             raise MontoInvalidoError("El monto inválido, debe ser mayor a cero")
         acomulado = self.calcular_acumulado_mensual()
@@ -133,6 +133,7 @@ class Billetera:
             impuesto=impuesto,
             acumulado_mensual=acumulado_actualizado,
         )
+        return impuesto
 
     # ------------------------------------------------------------------
     # Consultas
@@ -216,6 +217,9 @@ class Billetera:
         if bolsillo_origen is not None and bolsillo_origen not in self.bolsillos:
             raise BolsilloNoExisteError("El bolsillo de origen no existe", nombre=bolsillo_origen)
 
+        if bolsillo_origen == bolsillo_destino:
+            raise OperacionNoPermitidaError('No puede ingresar fondos al mismo bolsillo de origen')
+
         if bolsillo_destino not in self.bolsillos:
             raise BolsilloNoExisteError("El bolsillo de destino no existe", nombre=bolsillo_destino)
 
@@ -286,8 +290,7 @@ class Billetera:
             "cobro_cdt",
             valor_generado,
             origen="cdt",
-            destino="disponible",
-                                   )
+            destino="disponible",)
         return True
 
     # ------------------------------------------------------------------

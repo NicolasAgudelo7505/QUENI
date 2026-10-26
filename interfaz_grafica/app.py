@@ -160,10 +160,10 @@ class ServicioQueni:
             raise SesionExpirada()
 
     def registrar(self, datos) -> str:
-        nombre = _texto(datos, "nombre", "El nombre")
-        documento = _texto(datos, "documento", "El documento", maximo=20)
-        if not re.fullmatch(r"[0-9A-Za-z]{4,20}", documento):
-            raise DatoInvalidoError("El documento debe tener entre 4 y 20 letras o números")
+        nombre = _texto(datos, "nombre", "El nombre", maximo=150)
+        documento = _texto(datos, "documento", "El documento", maximo=64)
+        if not re.fullmatch(r"[0-9]{4,11}", documento):
+            raise DatoInvalidoError("El documento debe tener solo números, entre 4 y 11 dígitos")
         sueldo = _monto(datos, "sueldo", "El sueldo")
         saldo = _monto(datos, "saldo_inicial", "El saldo inicial", requerido=False) or 0.0
 

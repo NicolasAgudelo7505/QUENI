@@ -23,7 +23,7 @@ from flask import Flask, jsonify, render_template, request, session
 # El dominio vive en QUENI/src/modelo (paquete "modelo")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from modelo import QUENI, AnalizadorFinanciero, constantes
+from modelo import QUENI, AnalizadorFinanciero, constantes, Billetera
 from modelo.excepciones import (
     BilleteraError,
     SaldoInsuficienteError,
@@ -283,13 +283,13 @@ class ServicioQueni:
         extra = f" (4x1000: {cop(impuesto)})" if impuesto else ""
         return f"Enviaste {cop(monto)}{extra}"
 
+    # app.py
     def _sacar(self, u, d):
         monto, origen = _monto(d), _origen(d)
-        w = u.billetera
-        impuesto = w.calcular_4x1000(monto)
-        w.retirar_dinero(monto, origen)
+        impuesto = u.billetera.retirar_dinero(monto, origen)
         extra = f" (4x1000: {cop(impuesto)})" if impuesto else ""
         return f"Sacaste {cop(monto)}{extra}"
+
 
     def _depositar(self, u, d):
         monto = _monto(d)
@@ -305,7 +305,7 @@ class ServicioQueni:
     def _sacar_de_bolsillo(self, u, d):
         bolsillo = _texto(d, "bolsillo", "El bolsillo")
         monto = _monto(d)
-        u.billetera.mover_entre_bolsillos(None, monto, bolsillo)
+        u.billetera.retirar_de_bolsillo(monto, bolsillo)
         return f"Sacaste {cop(monto)} de {bolsillo}"
 
     def _nuevo_bolsillo(self, u, d):

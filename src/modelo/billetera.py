@@ -170,6 +170,9 @@ class Billetera:
         if fecha_meta is not None and fecha_meta <= date.today():
             raise MetaInvalidaError("La fecha meta debe ser posterior a la fecha actual")
 
+        if nombre in constantes.MONEDAS:
+            raise OperacionNoPermitidaError("No puede crear un bolsillo con nombre de divisa")
+
         self.bolsillos[nombre] = Bolsillo(
             nombre=nombre,
             monto_meta=monto_meta,

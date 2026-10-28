@@ -136,8 +136,19 @@ class ServicioQueni:
         self.archivo = archivo
         self.lock = threading.RLock()
         self.queni: QUENI = self._cargar()
+        self._reconstruir_cvvs(self.queni)
 
     # --- persistencia (pickle local; reemplazable por una base de datos) ---
+    def _reconstruir_cvvs(self, queni: QUENI) -> None:
+        """Rellena la lista de clase de CVVs a partir de las tarjetas ya persistidas."""
+        usados: list[str] = []
+        for billetera in queni.cuentas.values():
+            deb = billetera.tarjetas.get("Debito")
+            if deb is not None and getattr(deb, "cvv", None):
+                usados.append(deb.cvv)
+        # Mantener unicidad y orden estable
+        QUENI.cvvs_usados = list(dict.fromkeys(usados))
+
     def _cargar(self) -> QUENI:
         try:
             with open(self.archivo, "rb") as f:
@@ -192,12 +203,14 @@ class ServicioQueni:
         bolsillos: list[dict[str, Any]] = []
         extranjeros: list[dict[str, Any]] = []
         for nombre, b in w.bolsillos.items():
+            # Capitaliza antes de exponer el saldo (rentabilidad diaria acumulada).
+            saldo_actual = b.consultar_saldo()
             if nombre in constantes.MONEDAS:
-                extranjeros.append({"moneda": nombre, "saldo": b.saldo})
+                extranjeros.append({"moneda": nombre, "saldo": saldo_actual})
                 continue
             bolsillos.append({
                 "nombre": nombre,
-                "saldo": b.saldo,
+                "saldo": saldo_actual,
                 "rendimiento_mensual": b.calcular_rendimiento_mensual(),
                 "meta": (
                     {"monto": b.monto_meta, "fecha": b.fecha_meta.isoformat()}
@@ -242,7 +255,10 @@ class ServicioQueni:
             ],
             "limites": {
                 "monto_minimo_cdt": constantes.MONTO_MINIMO_CDT,
-                "tasa_cdt": constantes.RENTABILIDAD_CDT,
+                "plazos_cdt": list(constantes.PLAZOS_CDT_VALIDOS),
+                "tasas_cdt": {
+                    str(plazo): tasa for plazo, tasa in constantes.TASAS_CDT.items()
+                },
                 "tope_4x1000": constantes.TOPE_MENSUAL * constantes.VALOR_UVT,
                 "acumulado_mes": w.calcular_acumulado_mensual(),
             },
@@ -328,9 +344,18 @@ class ServicioQueni:
 
     def _abrir_cdt(self, u: Usuario, d: Datos) -> str:
         monto = _monto(d)
-        plazo = _entero(d, "plazo_meses", "El plazo", maximo=120)
+        plazo = _entero(d, "plazo_meses", "El plazo", maximo=36, minimo=6)
+        if plazo not in constantes.PLAZOS_CDT_VALIDOS:
+            plazos = ", ".join(str(p) for p in constantes.PLAZOS_CDT_VALIDOS)
+            raise DatoInvalidoError(
+                f"El plazo debe ser uno de: {plazos} meses"
+            )
         u.billetera.crear_cdt(monto, plazo, _origen(d))
-        return f"CDT de {cop(monto)} a {plazo} meses abierto"
+        tasa = constantes.TASAS_CDT[plazo]
+        return (
+            f"CDT de {cop(monto)} a {plazo} meses abierto "
+            f"({tasa * 100:.1f}% E.A.)"
+        )
 
     def _redimir_cdt(self, u: Usuario, d: Datos) -> str:
         w = u.billetera

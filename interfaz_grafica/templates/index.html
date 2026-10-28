@@ -517,9 +517,20 @@ const FORMS = {
     {n: "fecha_meta", l: "Fecha meta", tipo: "date", opcional: true}]},
   abrir_cdt: {titulo: "Abrir CDT", ok: "Abrir CDT", campos: [
     {n: "monto", l: "Monto", tipo: "monto", ayuda: () => `Mínimo ${cop(E.limites.monto_minimo_cdt)}`},
-    {n: "plazo_meses", l: "Plazo en meses", tipo: "number", min: 1, step: 1,
-     ayuda: v => { const m = parseFloat(v.monto), p = parseInt(v.plazo_meses);
-       return m > 0 && p > 0 ? `Valor al vencimiento: ${cop(m * Math.pow(1 + E.limites.tasa_cdt, p / 12))}` : ""; }},
+    {n: "plazo_meses", l: "Plazo", tipo: "select",
+     opciones: () => (E.limites.plazos_cdt || [6, 12, 18, 24, 30, 36]).map(p => {
+       const tasa = E.limites.tasas_cdt[String(p)];
+       return {v: String(p), t: `${p} meses · ${(tasa * 100).toFixed(1).replace(".", ",")}% E.A.`};
+     }),
+     ayuda: v => {
+       const m = parseFloat(v.monto), p = parseInt(v.plazo_meses, 10);
+       if (!(m > 0) || !(p > 0)) return "";
+       const tasa = E.limites.tasas_cdt[String(p)];
+       // Proyección con base 365 (30 días por mes de plazo), igual que el backend
+       const dias = 30 * p;
+       const valor = m * Math.pow(1 + tasa, dias / 365);
+       return `Valor al vencimiento: ${cop(valor)}`;
+     }},
     {n: "origen", l: "Desde", tipo: "select", opciones: origenes}]},
   redimir_cdt: {titulo: "Redimir CDT", ok: "Redimir", requiere: "cdts", sinDatos: "No tienes CDT activos",
     resumen: () => { const c = E.cdts[sel.cdt];

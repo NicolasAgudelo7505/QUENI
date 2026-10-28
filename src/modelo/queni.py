@@ -17,10 +17,12 @@ from .excepciones import (
 
 class QUENI:
 
+    cvvs_usados: list[str] = []
+
     def __init__(self):
         self.usuarios: dict[str, Usuario] = {}   # documento -> Usuario
         self.cuentas: dict[int, Billetera] = {}  # número de cuenta -> Billetera
-        self.tarjetas: dict [str, list[int]] = {'Debito' : [], 'Civica': []}
+        self.tarjetas: dict[str, list[int]] = {"Debito": [], "Civica": []}
 
 
     def generar_numero_cuenta(self) -> int:
@@ -124,13 +126,21 @@ class QUENI:
             if numero not in lista:
                 return numero  
 
+    def generar_cvv(self) -> str:
+        """Genera un CVV de 3 dígitos que no esté en la lista de clase cvvs_usados."""
+        while True:
+            cvv = f"{random.randint(0, 999):03d}"
+            if cvv not in QUENI.cvvs_usados:
+                QUENI.cvvs_usados.append(cvv)
+                return cvv
+
     def crear_tarjeta_debito(self) -> Tarjeta:
-        numero = self.generar_numero_tarjeta(self.tarjetas['Debito'], digitos=16)
+        numero = self.generar_numero_tarjeta(self.tarjetas["Debito"], digitos=16)
         hoy = date.today()
         expiracion = f"{hoy.month:02d}/{(hoy.year + 5) % 100:02d}"  # vigencia de 5 años
-        cvv = f"{random.randint(0, 999):03d}"
+        cvv = self.generar_cvv()
         tarjeta = Tarjeta(numero, fecha_expiracion=expiracion, cvv=cvv)
-        self.tarjetas['Debito'].append(tarjeta.numero)
+        self.tarjetas["Debito"].append(tarjeta.numero)
         return tarjeta
 
     def crear_tarjeta_civica(self) -> Civica:

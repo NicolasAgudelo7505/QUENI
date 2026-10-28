@@ -247,10 +247,15 @@ class Billetera:
                 f"El monto debe ser mayor que el monto mínimo del cdt: {constantes.MONTO_MINIMO_CDT}"
             )
 
-        if plazo_meses <= 0:
-            raise CDTInvalidoError("El plazo de los meses debe ser mayor que cero")
+        if plazo_meses not in constantes.PLAZOS_CDT_VALIDOS:
+            plazos = ", ".join(str(p) for p in constantes.PLAZOS_CDT_VALIDOS)
+            raise CDTInvalidoError(
+                f"El plazo debe ser uno de: {plazos} meses (de 6 en 6, mínimo 6, máximo 36)"
+            )
 
+        tasa = constantes.TASAS_CDT[plazo_meses]
         fecha_apertura = date.today()
+        # Aproximación de meses a días (30 días/mes) para la fecha de vencimiento.
         fecha_vencimiento = fecha_apertura + timedelta(days=30 * plazo_meses)
 
         # Primero se debita (puede fallar); solo después se crea el CDT.
@@ -262,6 +267,7 @@ class Billetera:
                 plazo_meses=plazo_meses,
                 fecha_apertura=fecha_apertura,
                 fecha_vencimiento=fecha_vencimiento,
+                tasa_interes=tasa,
             )
         )
 

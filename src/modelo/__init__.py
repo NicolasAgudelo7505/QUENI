@@ -26,12 +26,13 @@ from .analizador_financiero import AnalizadorFinanciero
 from .queni import QUENI
 from .constantes import (
     RENTABILIDAD_BOLSILLO,
-    RENTABILIDAD_CDT,
     IMPUESTO_4X1000,
     VALOR_UVT,
     TOPE_MENSUAL,
     TIPOS_COBRO_4X1000,
     MONTO_MINIMO_CDT,
+    PLAZOS_CDT_VALIDOS,
+    TASAS_CDT,
     MONEDAS,
     TASAS_DE_CAMBIO,
     TIPOS_GASTO,

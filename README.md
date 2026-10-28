@@ -39,6 +39,7 @@ billetera_digital/
 |   |    └── logo.png/
 |   └── templates/
 |   │   └── index.html/
+├── script_tiempo.py       
 ├── app.py          
 ├── src/
 │   └── modelo/
@@ -61,7 +62,7 @@ billetera_digital/
 │   └── test4.py
 └── docs/
     ├── Analisis_Billetera_Digital.docx
-    ├── diagrama_clases_drawio.png
+    ├── link_diagrama_clases.txt
     └── Pantallas QUENI.pdf
 ```
 
